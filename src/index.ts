@@ -4,6 +4,11 @@ import { config } from 'dotenv';
 import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
+export interface MeinuOptions {
+	owners: string[]
+	cmds?: Command[]
+	testing?: boolean
+}
 
 class Meinu {
 	client: Client
@@ -12,9 +17,10 @@ class Meinu {
 	owners: string[]
 	handler: InteractionHandler
 
-	constructor(owners?: string[], cmds?: Command[]) {
-		this.owners = owners || [];
-		this.init(cmds);
+	constructor(opts: MeinuOptions) {
+		this.owners = opts.owners || [];
+		this.testing = opts.testing || true;
+		this.init(opts.cmds);
 	}
 
 
@@ -29,49 +35,49 @@ class Meinu {
 
 	async registerTestingCommands(): Promise<void> {
 		console.log('hi');
-		const guild = this.client.guilds.cache.get('744006904958812210');
-
-		await guild.commands.fetch();
-		if (guild.commands.cache.size > 0) {
-			for await (const cmd of [ ...guild.commands.cache.values() ]) {
-				if (this.commands.has(cmd.name)) {
-					const command = this.commands.get(cmd.name);
-					if (command.cmd_type === 'SLASH') {
-						await cmd.edit({
-							name: cmd.name,
-							description: command.description,
-							options: command.options,
-							type: 'CHAT_INPUT'
-						});
+		for (const guild of [ ...this.client.guilds.cache.values() ]) {
+			await guild.commands.fetch();
+			if (guild.commands.cache.size > 0) {
+				for await (const cmd of [ ...guild.commands.cache.values() ]) {
+					if (this.commands.has(cmd.name)) {
+						const command = this.commands.get(cmd.name);
+						if (command.cmd_type === 'SLASH') {
+							await cmd.edit({
+								name: cmd.name,
+								description: command.description,
+								options: command.options,
+								type: 'CHAT_INPUT'
+							});
+						}
+					} else {
+						await cmd.delete();
 					}
-				} else {
-					await cmd.delete();
+				}
+				console.log('found commands');
+			}
+
+			for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'SLASH')) {
+				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+					await guild.commands.create({
+						name: cmd.name,
+						description: cmd.description,
+						options: cmd.options,
+						type: 'CHAT_INPUT'
+					});
 				}
 			}
-			console.log('found commands');
-		}
 
-		for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'SLASH')) {
-			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-				await guild.commands.create({
-					name: cmd.name,
-					description: cmd.description,
-					options: cmd.options,
-					type: 'CHAT_INPUT'
-				});
+			for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'CONTEXT')) {
+				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+					await guild.commands.create({
+						name: cmd.name,
+						type: 'MESSAGE'
+					});
+				}
 			}
-		}
 
-		for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'CONTEXT')) {
-			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-				await guild.commands.create({
-					name: cmd.name,
-					type: 'MESSAGE'
-				});
-			}
+			console.log(this.commands);
 		}
-
-		console.log(this.commands);
 	}
 
 	async initCommands(cmds: Command[]): Promise<void> {
@@ -98,7 +104,6 @@ class Meinu {
 
 	async init(cmds?: Command[]): Promise<void> {
 		config();
-		this.testing = Boolean(process.env.TESTING);
 
 		this.client = new Client({ intents: [ Intents.FLAGS.GUILDS ] });
 
