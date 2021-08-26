@@ -1,0 +1,9 @@
+{
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "files.insertFinalNewline": true,
+    "files.eol": "\n",
+    "editor.insertSpaces": false,
+    "prettier.useTabs": true,
+}

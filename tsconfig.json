@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"forceConsistentCasingInFileNames": true,
+		"lib": ["ES2020"],
+		"module": "CommonJS",
+		"moduleResolution": "Node",
+		"outDir": "dist/",
+		"resolveJsonModule": true,
+		"rootDir": "src/",
+		"target": "ES2020",
+		"downlevelIteration": true,
+		"esModuleInterop": true
+	},
+	"exclude": ["tests/", "dist/"]
+}
