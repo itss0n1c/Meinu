@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionData, ApplicationCommandType, Collection, CommandInteraction, Interaction, Message, MessageActionRow, MessageActionRowComponent, MessageButton, MessageButtonOptions, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
-import { Meinu } from '.';
+import Meinu from '.';
 import { promisify } from 'util';
 
 

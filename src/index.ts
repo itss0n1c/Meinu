@@ -5,7 +5,7 @@ import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
 
-export class Meinu {
+class Meinu {
 	client: Client
 	commands = new Commands()
 	testing:boolean
@@ -112,3 +112,7 @@ export class Meinu {
 		this.client.login(process.env.TOKEN);
 	}
 }
+
+export default Meinu;
+export { Command };
+export * from 'discord.js';

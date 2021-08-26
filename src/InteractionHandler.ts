@@ -1,6 +1,6 @@
 import { ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction } from 'discord.js';
 
-import { Meinu } from '.';
+import Meinu from '.';
 
 export class InteractionHandler {
 	private inst: Meinu
