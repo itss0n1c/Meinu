@@ -1,13 +1,8 @@
+/* eslint-disable no-unused-vars */
 import { ApplicationCommandOptionData, ApplicationCommandType, Collection, CommandInteraction, Interaction, Message, MessageActionRow, MessageActionRowComponent, MessageButton, MessageButtonOptions, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
-import Meinu from '.';
+
 import { promisify } from 'util';
-
-
-// eslint-disable-next-line no-unused-vars
-export type CommandRes = (bot: Meinu, interaction: CommandInteraction) => string | Promise<string>
-
-// eslint-disable-next-line no-unused-vars
-export type interactionHandler = (bot: Meinu, interaction: Interaction, msg: Message) => void
+import Meinu from '.';
 
 
 export interface CommandInfo {
@@ -19,7 +14,7 @@ export interface CommandInfo {
 	selectmenu?: MessageSelectMenuOptions[]
 }
 
-export class Command implements CommandInfo {
+export class Command<T = Meinu> implements CommandInfo {
 	name: string
 	description: string
 	options?: ApplicationCommandOptionData[]
@@ -28,8 +23,8 @@ export class Command implements CommandInfo {
 	buttons?: MessageButtonOptions[]
 	selectmenu?: MessageSelectMenuOptions[]
 	row: MessageActionRow
-	handler: interactionHandler
-	response: CommandRes
+	handler: (bot: T, interaction: Interaction, msg: Message) => void
+	response: (bot: T, interaction: CommandInteraction) => string | Promise<string>
 
 	constructor(opts: CommandInfo) {
 		this.name = opts.name;
@@ -55,19 +50,19 @@ export class Command implements CommandInfo {
 		}
 	}
 
-	async interactionHandler(cb: interactionHandler): Promise<void> {
+	async interactionHandler(cb: (bot: T, interaction: Interaction, msg: Message) => void): Promise<void> {
 		this.handler = cb;
 	}
 
-	async handleInteraction(bot: Meinu, interaction: Interaction, msg: Message): Promise<void> {
+	async handleInteraction(bot: T, interaction: Interaction, msg: Message): Promise<void> {
 		return this.handler(bot, interaction, msg);
 	}
 
-	run(cb: CommandRes): void {
+	run(cb: (bot: T, interaction: CommandInteraction) => string | Promise<string>): void {
 		this.response = cb;
 	}
 
-	async handle(bot: Meinu, interaction: CommandInteraction): Promise<string> {
+	async handle(bot: T, interaction: CommandInteraction): Promise<string> {
 		return this.response(bot, interaction);
 	}
 
