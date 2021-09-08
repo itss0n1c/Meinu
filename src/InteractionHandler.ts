@@ -13,17 +13,17 @@ export class InteractionHandler {
 		this.init();
 	}
 
-	async replyInt(res: string | MessageEmbed, interaction: CommandInteraction): Promise<void> {
+	async replyInt(res: string | MessageEmbed, interaction: CommandInteraction, error = false): Promise<void> {
 		let embed: MessageEmbed;
 
 		if (typeof res === 'string') {
 			embed = new MessageEmbed();
-			embed.setDescription(res);
+			embed.setDescription(!error ? res : `Oh no!\n\`\`\`${error}\`\`\``);
 		} else {
 			embed = res;
 		}
 
-		embed.setColor(this.inst.color)
+		embed.setColor(!error ? this.inst.color : 'RED')
 
 			.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
 				dynamic: true,
@@ -53,7 +53,12 @@ export class InteractionHandler {
 		const cmdname = int.commandName;
 		if (this.inst.commands.has(cmdname)) {
 			const cmd = this.inst.commands.get(cmdname);
-			const res = await cmd.handle(this.inst, int);
+			let res: string | MessageEmbed;
+			try {
+				res = await cmd.handle(this.inst, int);
+			} catch (e) {
+				return this.replyInt(e, int, true);
+			}
 			return this.replyInt(res, int);
 		}
 	}
