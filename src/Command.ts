@@ -5,6 +5,12 @@ import { promisify } from 'util';
 import Meinu from '.';
 
 
+// eslint-disable-next-line no-unused-vars
+export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | Promise<string>
+
+// eslint-disable-next-line no-unused-vars
+export type interactionHandler<T> = (bot: T, interaction: Interaction, msg: Message) => void
+
 export interface CommandInfo {
 	name: string
 	description: string
@@ -23,8 +29,8 @@ export class Command<T = Meinu> implements CommandInfo {
 	buttons?: MessageButtonOptions[]
 	selectmenu?: MessageSelectMenuOptions[]
 	row: MessageActionRow
-	handler: (bot: T, interaction: Interaction, msg: Message) => void
-	response: (bot: T, interaction: CommandInteraction) => string | Promise<string>
+	handler: interactionHandler<T>
+	response: CommandRes<T>
 
 	constructor(opts: CommandInfo) {
 		this.name = opts.name;
@@ -50,7 +56,7 @@ export class Command<T = Meinu> implements CommandInfo {
 		}
 	}
 
-	async interactionHandler(cb: (bot: T, interaction: Interaction, msg: Message) => void): Promise<void> {
+	async interactionHandler(cb: interactionHandler<T>): Promise<void> {
 		this.handler = cb;
 	}
 
@@ -58,7 +64,7 @@ export class Command<T = Meinu> implements CommandInfo {
 		return this.handler(bot, interaction, msg);
 	}
 
-	run(cb: (bot: T, interaction: CommandInteraction) => string | Promise<string>): void {
+	run(cb: CommandRes<T>): void {
 		this.response = cb;
 	}
 
