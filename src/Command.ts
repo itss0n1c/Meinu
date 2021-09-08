@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import { ApplicationCommandOptionData, ApplicationCommandType, Collection, CommandInteraction, Interaction, Message, MessageActionRow, MessageActionRowComponent, MessageButton, MessageButtonOptions, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
+import { ApplicationCommandOptionData, ApplicationCommandType, Collection, CommandInteraction, Interaction, Message, MessageActionRow, MessageActionRowComponent, MessageButton, MessageButtonOptions, MessageEmbed, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
 
 import { promisify } from 'util';
 import Meinu from '.';
 
 
 // eslint-disable-next-line no-unused-vars
-export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | Promise<string>
+export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | MessageEmbed | Promise<string> | Promise<MessageEmbed>
 
 // eslint-disable-next-line no-unused-vars
 export type interactionHandler<T> = (bot: T, interaction: Interaction, msg: Message) => void
@@ -68,7 +68,7 @@ export class Command<T = Meinu> implements CommandInfo {
 		this.response = cb;
 	}
 
-	async handle(bot: T, interaction: CommandInteraction): Promise<string> {
+	async handle(bot: T, interaction: CommandInteraction): Promise<string | MessageEmbed> {
 		return this.response(bot, interaction);
 	}
 
