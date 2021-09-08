@@ -18,7 +18,7 @@ export class InteractionHandler {
 
 		if (typeof res === 'string') {
 			embed = new MessageEmbed();
-			embed.setDescription(!error ? res : `Oh no!\n\`\`\`${error}\`\`\``);
+			embed.setDescription(!error ? res : `Oh no!\n\`\`\`${res}\`\`\``);
 		} else {
 			embed = res;
 		}
