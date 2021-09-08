@@ -1,10 +1,10 @@
 import { inspect } from 'util';
-import { Command } from '../Command';
+import { Command } from '../../src';
 
 const cm = new Command({
 	name: 'context action',
 	description: '',
-	cmd_type: 'CONTEXT'
+	type: 'MESSAGE'
 });
 
 cm.interactionHandler((bot, int, msg) => {

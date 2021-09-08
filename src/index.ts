@@ -41,12 +41,22 @@ class Meinu {
 				for await (const cmd of [ ...guild.commands.cache.values() ]) {
 					if (this.commands.has(cmd.name)) {
 						const command = this.commands.get(cmd.name);
-						if (command.cmd_type === 'SLASH') {
+						if (command.type === 'CHAT_INPUT') {
 							await cmd.edit({
 								name: cmd.name,
 								description: command.description,
 								options: command.options,
 								type: 'CHAT_INPUT'
+							});
+						} else if (command.type === 'MESSAGE') {
+							await cmd.edit({
+								name: cmd.name,
+								type: 'MESSAGE'
+							});
+						} else if (command.type === 'USER') {
+							await cmd.edit({
+								name: cmd.name,
+								type: 'USER'
 							});
 						}
 					} else {
@@ -56,7 +66,7 @@ class Meinu {
 				console.log('found commands');
 			}
 
-			for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'SLASH')) {
+			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'CHAT_INPUT')) {
 				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
 					await guild.commands.create({
 						name: cmd.name,
@@ -67,11 +77,20 @@ class Meinu {
 				}
 			}
 
-			for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'CONTEXT')) {
+			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'MESSAGE')) {
 				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
 					await guild.commands.create({
 						name: cmd.name,
 						type: 'MESSAGE'
+					});
+				}
+			}
+
+			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'USER')) {
+				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+					await guild.commands.create({
+						name: cmd.name,
+						type: 'USER'
 					});
 				}
 			}

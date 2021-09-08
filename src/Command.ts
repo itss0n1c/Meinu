@@ -3,14 +3,15 @@ import Meinu from '.';
 import { promisify } from 'util';
 
 
+// eslint-disable-next-line no-unused-vars
 export type CommandRes = (bot: Meinu, interaction: CommandInteraction) => string | Promise<string>
 
+// eslint-disable-next-line no-unused-vars
 export type interactionHandler = (bot: Meinu, interaction: Interaction, msg: Message) => void
 
 
 export interface CommandInfo {
 	name: string
-	cmd_type?: 'CONTEXT' | 'SLASH'
 	description: string
 	options?: ApplicationCommandOptionData[]
 	type?: ApplicationCommandType
@@ -20,7 +21,6 @@ export interface CommandInfo {
 
 export class Command implements CommandInfo {
 	name: string
-	cmd_type?: 'CONTEXT' | 'SLASH'
 	description: string
 	options?: ApplicationCommandOptionData[]
 	type?: ApplicationCommandType
@@ -29,14 +29,13 @@ export class Command implements CommandInfo {
 	selectmenu?: MessageSelectMenuOptions[]
 	row: MessageActionRow
 	handler: interactionHandler
-	private response: CommandRes
+	response: CommandRes
 
 	constructor(opts: CommandInfo) {
 		this.name = opts.name;
 		this.description = opts.description;
 		this.options = opts.options || [];
 		this.type = opts.type || 'CHAT_INPUT';
-		this.cmd_type = opts.cmd_type || 'SLASH';
 		this.buttons = opts.buttons || [];
 		this.selectmenu = opts.selectmenu || [];
 		this.initComponents();

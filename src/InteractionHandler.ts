@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction, TextChannel } from 'discord.js';
 
 import Meinu from '.';
 
@@ -61,7 +61,8 @@ export class InteractionHandler {
 	}
 
 	async handleContextMenu(int: ContextMenuInteraction): Promise<void> {
-		const message = int.channel.messages.cache.get(int.targetId);
+		const channel = await int.guild.channels.fetch(int.channelId) as TextChannel;
+		const message = channel.messages.cache.get(int.targetId);
 		const cmd = await this.inst.findCommand(int.command.name);
 		return cmd.handleInteraction(this.inst, int, message);
 	}

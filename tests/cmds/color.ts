@@ -1,5 +1,5 @@
 import { MessageEmbed } from 'discord.js';
-import { Command } from '../Command';
+import { Command } from '../../src';
 
 const color = new Command({
 	name: 'color',
