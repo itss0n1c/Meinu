@@ -17,7 +17,7 @@ export class InteractionHandler {
 		let embed: MessageEmbed;
 
 		if (error) {
-			const embed = new MessageEmbed();
+			embed = new MessageEmbed();
 			embed.setColor('RED');
 			embed.setDescription(`Oh no!\n\`\`\`${res}\`\`\``);
 		} else {
