@@ -23,6 +23,7 @@ export class InteractionHandler {
 		} else {
 			if (typeof res === 'string') {
 				embed = new MessageEmbed();
+				embed.setDescription(res);
 			} else {
 				embed = res;
 			}
