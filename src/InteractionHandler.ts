@@ -16,19 +16,24 @@ export class InteractionHandler {
 	async replyInt(res: string | MessageEmbed, interaction: CommandInteraction, error = false): Promise<void> {
 		let embed: MessageEmbed;
 
-		if (typeof res === 'string') {
-			embed = new MessageEmbed();
-			embed.setDescription(!error ? res : `Oh no!\n\`\`\`${res}\`\`\``);
+		if (error) {
+			const embed = new MessageEmbed();
+			embed.setColor('RED');
+			embed.setDescription(`Oh no!\n\`\`\`${res}\`\`\``);
 		} else {
-			embed = res;
+			if (typeof res === 'string') {
+				embed = new MessageEmbed();
+			} else {
+				embed = res;
+			}
+			embed.setColor(this.inst.color);
 		}
 
-		embed.setColor(!error ? this.inst.color : 'RED')
 
-			.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
-				dynamic: true,
-				format: 'png'
-			}))
+		embed.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
+			dynamic: true,
+			format: 'png'
+		}))
 			.setTimestamp(new Date());
 
 		const cmd = await this.inst.findCommand(interaction.command.name);
