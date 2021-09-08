@@ -15,11 +15,8 @@ export class InteractionHandler {
 
 	async replyInt(res: string | MessageEmbed, interaction: CommandInteraction): Promise<void> {
 		const embed = new MessageEmbed();
-		embed.setColor(this.inst.color);
-		embed.setAuthor(this.inst.name, this.inst.client.user.displayAvatarURL({
-			dynamic: true,
-			format: 'png'
-		}))
+		embed.setColor(this.inst.color)
+
 			.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
 				dynamic: true,
 				format: 'png'
