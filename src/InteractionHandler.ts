@@ -19,7 +19,7 @@ export class InteractionHandler {
 		if (error) {
 			embed = new MessageEmbed();
 			embed.setColor('RED');
-			embed.setDescription(`Oh no!\n\`\`\`${res}\`\`\``);
+			embed.setDescription(`Oh no!\n${res}\n`);
 		} else {
 			if (typeof res === 'string') {
 				embed = new MessageEmbed();
