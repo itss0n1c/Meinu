@@ -14,7 +14,15 @@ export class InteractionHandler {
 	}
 
 	async replyInt(res: string | MessageEmbed, interaction: CommandInteraction): Promise<void> {
-		const embed = new MessageEmbed();
+		let embed: MessageEmbed;
+
+		if (typeof res === 'string') {
+			embed = new MessageEmbed();
+			embed.setDescription(res);
+		} else {
+			embed = res;
+		}
+
 		embed.setColor(this.inst.color)
 
 			.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
@@ -22,14 +30,6 @@ export class InteractionHandler {
 				format: 'png'
 			}))
 			.setTimestamp(new Date());
-
-		if (typeof res === 'string') {
-			embed.setDescription(res);
-		} else {
-			embed.description = res.description || null;
-			embed.fields = res.fields || [];
-			embed.thumbnail = res.thumbnail;
-		}
 
 		const cmd = await this.inst.findCommand(interaction.command.name);
 		let components: MessageActionRow[] = [];
