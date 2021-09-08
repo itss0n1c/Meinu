@@ -1,16 +1,20 @@
-import { Client, Intents } from 'discord.js';
+import { Client, ColorResolvable, Intents } from 'discord.js';
 import { Command, Commands } from './Command';
 import { config } from 'dotenv';
 import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
 export interface MeinuOptions {
+	color?: ColorResolvable
+	name?: string
 	owners: string[]
 	cmds?: Command[]
 	testing?: boolean
 }
 
 class Meinu {
+	name: string
+	color: ColorResolvable
 	client: Client
 	commands = new Commands()
 	testing:boolean
@@ -18,6 +22,8 @@ class Meinu {
 	handler: InteractionHandler
 
 	constructor(opts: MeinuOptions) {
+		this.name = opts.name || 'Meinu';
+		this.color = opts.color || '#007aff';
 		this.owners = opts.owners || [];
 		this.testing = opts.testing || true;
 		this.init(opts.cmds);
