@@ -14,17 +14,17 @@ const evalc = new Command({
 	]
 });
 
-evalc.run(async (client, interaction) => {
-	if (!client.owners.includes(interaction.user.id)) {
+evalc.run(async (bot, int) => {
+	if (!bot.owners.includes(int.user.id)) {
 		return 'Can\'t let you do that fam';
 	}
 
 
-	const script = interaction.options.getString('script');
+	const script = int.options.getString('script');
 
 	let run: string;
 	try {
-		run = await Object.getPrototypeOf((async () => '')).constructor('client', 'interaction', `return ${script}`)(client, interaction);
+		run = await Object.getPrototypeOf((async () => '')).constructor('bot', 'int', `return ${script}`)(bot, int);
 	} catch (e) {
 		console.error(e);
 		run = e;
