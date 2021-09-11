@@ -1,16 +1,27 @@
-import { Client, ColorResolvable, Intents } from 'discord.js';
+import { Client, ColorResolvable, Guild, Intents } from 'discord.js';
 import { Command, Commands } from './Command';
+import ScrollEmbed from './ScrollEmbed';
 import { config } from 'dotenv';
 import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
-export interface MeinuOptions {
+export interface MeinuOptionsBasics {
 	color?: ColorResolvable
 	name?: string
 	owners: string[]
 	cmds?: Command[]
-	testing?: boolean
 }
+
+export interface MeinuOptionsPublic extends MeinuOptionsBasics {
+	testing?: false
+}
+
+export interface MeinuOptionsTesting extends MeinuOptionsBasics {
+	testing?: true
+	testingGuild: string
+}
+
+export type MeinuOptions = MeinuOptionsTesting | MeinuOptionsPublic;
 
 class Meinu {
 	name: string
@@ -20,13 +31,13 @@ class Meinu {
 	testing:boolean
 	owners: string[]
 	handler: InteractionHandler
+	testingGuild: Guild
 
 	constructor(opts: MeinuOptions) {
 		this.name = opts.name || 'Meinu';
 		this.color = opts.color || '#007aff';
 		this.owners = opts.owners || [];
-		this.testing = opts.testing || true;
-		this.init(opts.cmds);
+		this.init(opts);
 	}
 
 
@@ -41,68 +52,52 @@ class Meinu {
 
 	async registerTestingCommands(): Promise<void> {
 		console.log('hi');
-		for (const guild of [ ...this.client.guilds.cache.values() ]) {
-			await guild.commands.fetch();
-			if (guild.commands.cache.size > 0) {
-				for await (const cmd of [ ...guild.commands.cache.values() ]) {
-					if (this.commands.has(cmd.name)) {
-						const command = this.commands.get(cmd.name);
-						if (command.type === 'CHAT_INPUT') {
-							await cmd.edit({
-								name: cmd.name,
-								description: command.description,
-								options: command.options,
-								type: 'CHAT_INPUT'
-							});
-						} else if (command.type === 'MESSAGE') {
-							await cmd.edit({
-								name: cmd.name,
-								type: 'MESSAGE'
-							});
-						} else if (command.type === 'USER') {
-							await cmd.edit({
-								name: cmd.name,
-								type: 'USER'
-							});
-						}
-					} else {
-						await cmd.delete();
-					}
-				}
-				console.log('found commands');
-			}
 
-			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'CHAT_INPUT')) {
-				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-					await guild.commands.create({
-						name: cmd.name,
-						description: cmd.description,
-						options: cmd.options,
-						type: 'CHAT_INPUT'
-					});
+		const guild = this.testingGuild;
+
+
+		if (guild.commands.cache.size > 0) {
+			for (const cmd of [ ...guild.commands.cache.values() ]) {
+				if (this.commands.has(cmd.name)) {
+					const command = this.commands.get(cmd.name);
+					await cmd.edit(command.commandInfo());
+				} else {
+					await cmd.delete();
 				}
 			}
-
-			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'MESSAGE')) {
-				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-					await guild.commands.create({
-						name: cmd.name,
-						type: 'MESSAGE'
-					});
-				}
-			}
-
-			for await (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'USER')) {
-				if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-					await guild.commands.create({
-						name: cmd.name,
-						type: 'USER'
-					});
-				}
-			}
-
-			console.log(this.commands);
+			console.log('found commands');
 		}
+
+		for (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'CHAT_INPUT')) {
+			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+				await guild.commands.create({
+					name: cmd.name,
+					description: cmd.description,
+					options: cmd.options,
+					type: 'CHAT_INPUT'
+				});
+			}
+		}
+
+		for (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'MESSAGE')) {
+			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+				await guild.commands.create({
+					name: cmd.name,
+					type: 'MESSAGE'
+				});
+			}
+		}
+
+		for (const cmd of [ ...this.commands.values() ].filter(c => c.type === 'USER')) {
+			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
+				await guild.commands.create({
+					name: cmd.name,
+					type: 'USER'
+				});
+			}
+		}
+
+		console.log(this.commands);
 	}
 
 	async initCommands(cmds: Command[]): Promise<void> {
@@ -115,7 +110,9 @@ class Meinu {
 			}
 		}
 		if (this.testing) {
-			return this.registerTestingCommands();
+			console.time('register');
+			await this.registerTestingCommands();
+			return console.timeEnd('register');
 		}
 		return this.registerCommands();
 	}
@@ -127,13 +124,20 @@ class Meinu {
 		throw 404;
 	}
 
-	async init(cmds?: Command[]): Promise<void> {
+	async init(opts: MeinuOptions): Promise<void> {
 		config();
 
 		this.client = new Client({ intents: [ Intents.FLAGS.GUILDS ] });
 
 		this.client.on('ready', async () => {
-			await this.initCommands(cmds);
+			if (typeof opts.testing !== 'undefined' && opts.testing) {
+				this.testing = opts.testing;
+				this.testingGuild = this.client.guilds.cache.get(opts.testingGuild);
+				await this.testingGuild.fetch();
+			} else {
+				this.testing = false;
+			}
+			await this.initCommands(opts.cmds);
 			this.handler = new InteractionHandler(this);
 			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
@@ -144,5 +148,5 @@ class Meinu {
 }
 
 export default Meinu;
-export { Command };
+export { Command, ScrollEmbed };
 export * from 'discord.js';
