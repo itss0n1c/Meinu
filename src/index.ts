@@ -10,6 +10,7 @@ export interface MeinuOptionsBasics {
 	name?: string
 	owners: string[]
 	cmds?: Command[]
+	fullIntents?: boolean
 }
 
 export interface MeinuOptionsPublic extends MeinuOptionsBasics {
@@ -32,11 +33,14 @@ class Meinu {
 	owners: string[]
 	handler: InteractionHandler
 	testingGuild: Guild
+	fullIntents: boolean
 
 	constructor(opts: MeinuOptions) {
 		this.name = opts.name || 'Meinu';
 		this.color = opts.color || '#007aff';
 		this.owners = opts.owners || [];
+		this.fullIntents = opts.fullIntents || false;
+		opts.fullIntents = this.fullIntents;
 		this.init(opts);
 	}
 
@@ -127,7 +131,12 @@ class Meinu {
 	async init(opts: MeinuOptions): Promise<void> {
 		config();
 
-		this.client = new Client({ intents: [ Intents.FLAGS.GUILDS ] });
+		if (opts.fullIntents) {
+			this.client = new Client({ intents: Object.values(Intents.FLAGS) });
+		} else {
+			this.client = new Client({ intents: [ Intents.FLAGS.GUILDS ] });
+		}
+
 
 		this.client.on('ready', async () => {
 			if (typeof opts.testing !== 'undefined' && opts.testing) {
