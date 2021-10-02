@@ -6,7 +6,7 @@ import Meinu from '.';
 
 
 // eslint-disable-next-line no-unused-vars
-export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | MessageEmbed | Promise<string> | Promise<MessageEmbed>
+export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | MessageEmbed | Promise<string> | Promise<MessageEmbed> | void | Promise<void>
 
 // eslint-disable-next-line no-unused-vars
 export type interactionHandler<T> = (bot: T, interaction: Interaction, msg: Message) => void
@@ -95,7 +95,7 @@ export class Command<T = Meinu> {
 		this.response = cb;
 	}
 
-	async handle(bot: T, interaction: CommandInteraction): Promise<string | MessageEmbed> {
+	async handle(bot: T, interaction: CommandInteraction): Promise<string | MessageEmbed | void> {
 		this.interactions.set(interaction.id, interaction);
 		return this.response(bot, interaction);
 	}

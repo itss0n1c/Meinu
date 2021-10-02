@@ -59,13 +59,15 @@ export class InteractionHandler {
 		const cmdname = int.commandName;
 		if (this.inst.commands.has(cmdname)) {
 			const cmd = this.inst.commands.get(cmdname);
-			let res: string | MessageEmbed;
+			let res: string | MessageEmbed | void;
 			try {
 				res = await cmd.handle(this.inst, int);
 			} catch (e) {
 				return this.replyInt(e, int, true);
 			}
-			return this.replyInt(res, int);
+			if (typeof res !== 'undefined') {
+				return this.replyInt(res, int);
+			}
 		}
 	}
 
