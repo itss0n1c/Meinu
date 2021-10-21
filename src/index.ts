@@ -58,13 +58,27 @@ class Meinu {
 		console.log('hi');
 
 		const guild = this.testingGuild;
-
-
+		await guild.commands.fetch();
 		if (guild.commands.cache.size > 0) {
 			for (const cmd of [ ...guild.commands.cache.values() ]) {
 				if (this.commands.has(cmd.name)) {
 					const command = this.commands.get(cmd.name);
-					await cmd.edit(command.commandInfo());
+					if (typeof command.options !== 'undefined') {
+						for (const option of command.options) {
+							if (typeof cmd.options.find(o => o.name === option.name && o.description === option.description && o.required === option.required && o.type === option.type) === 'undefined') {
+								console.log(`Changes to ${cmd.name} locally`);
+								await cmd.edit(command.commandInfo());
+							}
+						}
+					}
+
+					for (const option of cmd.options) {
+						if (typeof command.options.find(o => o.name === option.name && o.description === option.description && o.required === option.required && o.type === option.type) === 'undefined') {
+							console.log(`Changes to ${cmd.name} on ${guild.name}`);
+							await cmd.edit(command.commandInfo());
+						}
+					}
+					// await cmd.edit(command.commandInfo());
 				} else {
 					await cmd.delete();
 				}
