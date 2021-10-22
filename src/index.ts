@@ -39,6 +39,8 @@ class Meinu {
 		this.name = opts.name || 'Meinu';
 		this.color = opts.color || '#007aff';
 		this.owners = opts.owners || [];
+		this.testing = opts.testing || false;
+		opts.testing = this.testing;
 		this.fullIntents = opts.fullIntents || false;
 		opts.fullIntents = this.fullIntents;
 		this.init(opts);
