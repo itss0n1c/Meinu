@@ -1,4 +1,4 @@
-import { Client, ColorResolvable, Guild, Intents } from 'discord.js';
+import { ApplicationCommandOption, ApplicationCommandOptionData, Client, ColorResolvable, Guild, Intents } from 'discord.js';
 import { Command, Commands } from './Command';
 import ScrollEmbed from './ScrollEmbed';
 import { config } from 'dotenv';
@@ -56,6 +56,38 @@ class Meinu {
 		}
 	}
 
+	private compareOption(local: ApplicationCommandOptionData, guild: ApplicationCommandOption[]): boolean {
+		const keys = Object.keys(guild[0]);
+		const matches = Object.fromEntries(Object.keys(local).map(k => [ k, false ]));
+		for (const k of keys) {
+			if (typeof local[k] !== 'undefined') {
+				if (typeof guild.find(o => o[k] === local[k]) !== 'undefined') {
+					matches[k] = true;
+				}
+			}
+		}
+		// console.log(matches);
+		if (Object.values(matches).includes(false)) {
+			return false;
+		}
+		return true;
+	}
+
+	private compareOptionGuild(guild: ApplicationCommandOption, local: ApplicationCommandOptionData[]): boolean {
+		const matches = Object.fromEntries(Object.keys(guild).map(k => [ k, true ]));
+		for (const k of Object.keys(guild)) {
+			const find = local.find(o => typeof o[k] !== 'undefined' && o[k] === guild[k]);
+			if (typeof find === 'undefined') {
+				delete matches[k];
+			}
+		}
+		console.log(matches);
+		if (Object.values(matches).includes(false)) {
+			return false;
+		}
+		return true;
+	}
+
 	async registerTestingCommands(): Promise<void> {
 		console.log('hi');
 
@@ -67,7 +99,7 @@ class Meinu {
 					const command = this.commands.get(cmd.name);
 					if (typeof command.options !== 'undefined') {
 						for (const option of command.options) {
-							if (typeof cmd.options.find(o => o.name === option.name && o.description === option.description && o.required === option.required && o.type === option.type) === 'undefined') {
+							if (!this.compareOption(option, cmd.options)) {
 								console.log(`Changes to ${cmd.name} locally`);
 								await cmd.edit(command.commandInfo());
 							}
@@ -75,7 +107,7 @@ class Meinu {
 					}
 
 					for (const option of cmd.options) {
-						if (typeof command.options.find(o => o.name === option.name && o.description === option.description && o.required === option.required && o.type === option.type) === 'undefined') {
+						if (!this.compareOptionGuild(option, command.options)) {
 							console.log(`Changes to ${cmd.name} on ${guild.name}`);
 							await cmd.edit(command.commandInfo());
 						}
