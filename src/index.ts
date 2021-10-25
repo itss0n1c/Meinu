@@ -6,23 +6,24 @@ import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
 export interface MeinuOptionsBasics {
-	color?: ColorResolvable
-	name?: string
+	color: ColorResolvable
+	name: string
 	owners: string[]
-	cmds?: Command[]
-	fullIntents?: boolean
+	cmds: Command[]
+	fullIntents: boolean
+	token: string
 }
 
 export interface MeinuOptionsPublic extends MeinuOptionsBasics {
-	testing?: false
+	testing: false
 }
 
 export interface MeinuOptionsTesting extends MeinuOptionsBasics {
-	testing?: true
+	testing: true
 	testingGuild: string
 }
 
-export type MeinuOptions = MeinuOptionsTesting | MeinuOptionsPublic;
+export type MeinuOptions = MeinuOptionsPublic | MeinuOptionsTesting;
 
 class Meinu {
 	name: string
@@ -35,7 +36,7 @@ class Meinu {
 	testingGuild: Guild
 	fullIntents: boolean
 
-	constructor(opts: MeinuOptions) {
+	constructor(opts: Partial<MeinuOptions>) {
 		this.name = opts.name || 'Meinu';
 		this.color = opts.color || '#007aff';
 		this.owners = opts.owners || [];
@@ -176,7 +177,7 @@ class Meinu {
 		throw 404;
 	}
 
-	async init(opts: MeinuOptions): Promise<void> {
+	async init(opts: Partial<MeinuOptions>): Promise<void> {
 		config();
 
 		if (opts.fullIntents) {
@@ -199,8 +200,10 @@ class Meinu {
 			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
 
-
-		this.client.login(process.env.TOKEN);
+		if (typeof process.env.TOKEN === 'undefined' && typeof opts.token === 'undefined') {
+			throw 'Token not defined.';
+		}
+		this.client.login(process.env.TOKEN ?? opts.token);
 	}
 }
 
