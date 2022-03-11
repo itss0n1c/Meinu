@@ -12,6 +12,7 @@ export interface MeinuOptionsBasics {
 	cmds: Command[]
 	fullIntents: boolean
 	token: string
+	registerDefaults: boolean
 }
 
 export interface MeinuOptionsPublic extends MeinuOptionsBasics {
@@ -153,10 +154,13 @@ class Meinu {
 		console.log(this.commands);
 	}
 
-	async initCommands(cmds: Command[]): Promise<void> {
-		for (const cmd of defaultCommands) {
-			this.commands.set(cmd.name, cmd);
+	async initCommands(cmds: Command[], registerDefaults = false): Promise<void> {
+		if (registerDefaults) {
+			for (const cmd of defaultCommands) {
+				this.commands.set(cmd.name, cmd);
+			}
 		}
+
 		if (typeof cmds !== 'undefined') {
 			for (const cmd of cmds) {
 				this.commands.set(cmd.name, cmd);
@@ -195,7 +199,7 @@ class Meinu {
 			} else {
 				this.testing = false;
 			}
-			await this.initCommands(opts.cmds);
+			await this.initCommands(opts.cmds, opts.registerDefaults);
 			this.handler = new InteractionHandler(this);
 			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
