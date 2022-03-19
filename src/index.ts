@@ -2,7 +2,6 @@ import { ApplicationCommandOption, ApplicationCommandOptionData, Client, ColorRe
 import { Command, Commands } from './Command';
 import ScrollEmbed from './ScrollEmbed';
 import { config } from 'dotenv';
-import { defaultCommands } from './cmds';
 import { InteractionHandler } from './InteractionHandler';
 
 export interface MeinuOptionsBasics {
@@ -12,7 +11,6 @@ export interface MeinuOptionsBasics {
 	cmds: Command[]
 	fullIntents: boolean
 	token: string
-	registerDefaults: boolean
 }
 
 export interface MeinuOptionsPublic extends MeinuOptionsBasics {
@@ -154,13 +152,7 @@ class Meinu {
 		console.log(this.commands);
 	}
 
-	async initCommands(cmds: Command[], registerDefaults = false): Promise<void> {
-		if (registerDefaults) {
-			for (const cmd of defaultCommands) {
-				this.commands.set(cmd.name, cmd);
-			}
-		}
-
+	async initCommands(cmds: Command[]): Promise<void> {
 		if (typeof cmds !== 'undefined') {
 			for (const cmd of cmds) {
 				this.commands.set(cmd.name, cmd);
@@ -199,7 +191,7 @@ class Meinu {
 			} else {
 				this.testing = false;
 			}
-			await this.initCommands(opts.cmds, opts.registerDefaults);
+			await this.initCommands(opts.cmds);
 			this.handler = new InteractionHandler(this);
 			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
@@ -214,3 +206,4 @@ class Meinu {
 export default Meinu;
 export { Command, ScrollEmbed };
 export * from 'discord.js';
+export * as defaultCommands from './cmds';

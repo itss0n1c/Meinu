@@ -27,14 +27,14 @@ export default class ScrollEmbed<Data = any, Bot = Meinu> extends Command<Bot> {
 			description: opts.description,
 			buttons: [
 				{
-					label: '<',
+					label: '←',
 					customId: 'left',
-					style: 'PRIMARY'
+					style: 'SECONDARY'
 				},
 				{
-					label: '>',
+					label: '→',
 					customId: 'right',
-					style: 'PRIMARY'
+					style: 'SECONDARY'
 				}
 			],
 			options: opts.options });
