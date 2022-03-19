@@ -1,9 +1,7 @@
-import echo from './echo';
-import eval from './eval';
-import help from './help';
+import echoCommand from './echo';
+import evalCommand from './eval';
+import helpCommand from './help';
 
-export default {
-	echo,
-	eval,
-	help
-};
+export const echo = echoCommand;
+export const evalc = evalCommand;
+export const help = helpCommand;

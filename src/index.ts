@@ -206,4 +206,4 @@ class Meinu {
 export default Meinu;
 export { Command, ScrollEmbed };
 export * from 'discord.js';
-export * as defaultCommands from './cmds';
+export * from './cmds';
