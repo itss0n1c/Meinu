@@ -83,16 +83,18 @@ export class Command<T = Meinu> {
 		}
 	}
 
-	async interactionHandler(cb: interactionHandler<T>): Promise<void> {
+	async interactionHandler(cb: interactionHandler<T>): Promise<this> {
 		this.handler = cb;
+		return this;
 	}
 
 	async handleInteraction(bot: T, interaction: Interaction, msg: Message): Promise<void> {
 		return this.handler(bot, interaction, msg);
 	}
 
-	run(cb: CommandRes<T>): void {
+	run(cb: CommandRes<T>): this {
 		this.response = cb;
+		return this;
 	}
 
 	async handle(bot: T, interaction: CommandInteraction): Promise<string | MessageEmbed | void> {
