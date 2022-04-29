@@ -83,7 +83,7 @@ export class Command<T = Meinu> {
 		}
 	}
 
-	async interactionHandler(cb: interactionHandler<T>): Promise<this> {
+	interactionHandler(cb: interactionHandler<T>): this {
 		this.handler = cb;
 		return this;
 	}
