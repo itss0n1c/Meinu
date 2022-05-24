@@ -8,6 +8,5 @@ import user from './cmds/user';
 new Meinu({
 	owners: [ '211160171945263105' ],
 	cmds: [ cm, color, user, profile, scroll ],
-	testing: true,
-	testingGuild: '744006904958812210'
+	testing: true
 });
