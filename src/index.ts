@@ -89,7 +89,13 @@ class Meinu {
 	async registerTestingCommands(): Promise<void> {
 		console.log('hi');
 		for (const guild of this.client.guilds.cache.values()) {
-			await guild.commands.fetch();
+			try {
+				await guild.commands.fetch();
+			} catch (e) {
+				console.log(`Failed to fetch commands for ${guild.name}, skipping.`);
+				continue;
+			}
+
 			if (guild.commands.cache.size > 0) {
 				for (const cmd of [ ...guild.commands.cache.values() ]) {
 					if (this.commands.has(cmd.name)) {

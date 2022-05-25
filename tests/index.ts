@@ -1,4 +1,5 @@
 import Meinu from '../src';
+import ac from './cmds/ac';
 import cm from './cmds/cm';
 import color from './cmds/color';
 import profile from './cmds/profile';
@@ -7,6 +8,6 @@ import user from './cmds/user';
 
 new Meinu({
 	owners: [ '211160171945263105' ],
-	cmds: [ cm, color, user, profile, scroll ],
+	cmds: [ cm, color, user, profile, scroll, ac ],
 	testing: true
 });

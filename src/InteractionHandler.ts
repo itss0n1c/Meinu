@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction, TextChannel } from 'discord.js';
+import { AutocompleteInteraction, ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction, TextChannel } from 'discord.js';
 
 import Meinu from '.';
 
@@ -47,6 +47,11 @@ export class InteractionHandler {
 			components });
 	}
 
+	async handleAutocomplete(int: AutocompleteInteraction): Promise<void> {
+		const cmd = await this.inst.findCommand(int.commandName);
+		return cmd.handleInteraction(this.inst, int);
+	}
+
 	async handleButton(int: ButtonInteraction): Promise<void> {
 		const msg_int = int.message.interaction;
 		if (msg_int.type === 'APPLICATION_COMMAND') {
@@ -89,8 +94,13 @@ export class InteractionHandler {
 		}
 	}
 
+
 	async init(): Promise<void> {
 		this.inst.client.on('interactionCreate', async interaction => {
+			if (interaction.isAutocomplete()) {
+				return this.handleAutocomplete(interaction);
+			}
+
 			if (interaction.isButton()) {
 				return this.handleButton(interaction);
 			}

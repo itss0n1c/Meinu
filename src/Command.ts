@@ -9,7 +9,7 @@ import Meinu from '.';
 export type CommandRes<T> = (bot: T, interaction: CommandInteraction) => string | MessageEmbed | Promise<string> | Promise<MessageEmbed> | void | Promise<void>
 
 // eslint-disable-next-line no-unused-vars
-export type interactionHandler<T> = (bot: T, interaction: Interaction, msg: Message) => void
+export type interactionHandler<T> = (bot: T, interaction: Interaction, msg?: Message) => void
 
 export interface CommandInfoBasics {
 	name: string
@@ -88,7 +88,7 @@ export class Command<T = Meinu> {
 		return this;
 	}
 
-	async handleInteraction(bot: T, interaction: Interaction, msg: Message): Promise<void> {
+	async handleInteraction(bot: T, interaction: Interaction, msg?: Message): Promise<void> {
 		return this.handler(bot, interaction, msg);
 	}
 
