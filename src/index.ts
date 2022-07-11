@@ -34,19 +34,15 @@ class Meinu {
 	handler: InteractionHandler;
 	fullIntents: boolean;
 
-	async start(opts: Partial<MeinuOptions>): Promise<Meinu> {
-		const inst = new Meinu();
-		inst.name = opts.name || 'Meinu';
-		inst.color = opts.color || '#007aff';
-		inst.owners = opts.owners || [];
-		inst.testing = opts.testing || false;
-		opts.testing = inst.testing;
-		inst.fullIntents = opts.fullIntents || false;
-		opts.fullIntents = inst.fullIntents;
-		await inst.init(opts);
-		await new Promise((res) => inst.client.on('ready', res));
-		console.log(`Logged in as ${inst.client.user.tag}!`);
-		return inst;
+	constructor(opts: Partial<MeinuOptions>) {
+		this.name = opts.name || 'Meinu';
+		this.color = opts.color || '#007aff';
+		this.owners = opts.owners || [];
+		this.testing = opts.testing || false;
+		opts.testing = this.testing;
+		this.fullIntents = opts.fullIntents || false;
+		opts.fullIntents = this.fullIntents;
+		this.init(opts);
 	}
 
 	async registerCommands(): Promise<void> {
@@ -227,6 +223,7 @@ class Meinu {
 			this.testingGuild = opts.testing ? opts.testingGuild : null;
 			await this.initCommands(opts.cmds);
 			this.handler = new InteractionHandler(this);
+			console.log(`Logged in as ${this.client.user.tag}!`);
 		});
 
 		if (typeof process.env.TOKEN === 'undefined' && typeof opts.token === 'undefined') {
