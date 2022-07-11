@@ -1,27 +1,27 @@
 {
-  "name": "meinu",
-  "version": "1.1.5",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "license": "MIT",
-  "author": "S0n1c",
-  "scripts": {
-    "build": "tsc -p .",
-    "dev": "ts-node-dev ./tests/index.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^16.9.1",
-    "@typescript-eslint/eslint-plugin": "^4.31.0",
-    "@typescript-eslint/parser": "^4.31.0",
-    "eslint": "^7.32.0",
-    "ts-node-dev": "^1.1.8",
-    "typescript": "^4.4.3"
-  },
-  "dependencies": {
-    "discord.js": "^13.6.0",
-    "dotenv": "^10.0.0"
-  },
-  "description": "Yet another Discord.JS framework that, this time, focuses on the new Interactions API.",
-  "repository": "git@github.com:itss0n1c/meinu.git",
-  "packageManager": "yarn@3.2.1"
+	"name": "meinu",
+	"version": "3.0.0",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"license": "MIT",
+	"author": "S0n1c",
+	"scripts": {
+		"build": "tsc -p .",
+		"dev": "ts-node-dev ./tests/index.ts"
+	},
+	"devDependencies": {
+		"@types/node": "^18.0.3",
+		"@typescript-eslint/eslint-plugin": "^5.30.6",
+		"@typescript-eslint/parser": "^5.30.6",
+		"eslint": "^8.19.0",
+		"ts-node-dev": "1.1.8",
+		"typescript": "4.4.3"
+	},
+	"dependencies": {
+		"discord.js": "13.6.0",
+		"dotenv": "^16.0.1"
+	},
+	"description": "Yet another Discord.JS framework that, this time, focuses on the new Interactions API.",
+	"repository": "git@github.com:itss0n1c/meinu.git",
+	"packageManager": "yarn@3.2.1"
 }

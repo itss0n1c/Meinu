@@ -14,10 +14,12 @@ export default new Command({
 	]
 }).interactionHandler((bot, int) => {
 	if (int.isAutocomplete()) {
-		const str = int.options.getString('query');
-		return int.respond([ ...str ].map(c => ({
-			name: c.toUpperCase(),
-			value: c
-		})));
+		const str = int.options.getString('query', true);
+		return int.respond(
+			[ ...str ].map((c) => ({
+				name: c.toUpperCase(),
+				value: c
+			}))
+		);
 	}
 });

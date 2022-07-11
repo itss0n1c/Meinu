@@ -1,9 +1,18 @@
-import { AutocompleteInteraction, ButtonInteraction, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageEmbed, SelectMenuInteraction, TextChannel } from 'discord.js';
+import {
+	AutocompleteInteraction,
+	ButtonInteraction,
+	CommandInteraction,
+	ContextMenuInteraction,
+	Message,
+	MessageEmbed,
+	SelectMenuInteraction,
+	TextChannel
+} from 'discord.js';
 
-import Meinu from '.';
+import { Command, Meinu } from '.';
 
 export class InteractionHandler {
-	private inst: Meinu
+	private inst: Meinu;
 	constructor(inst: Meinu) {
 		Object.defineProperty(this, 'inst', {
 			value: inst,
@@ -30,21 +39,17 @@ export class InteractionHandler {
 			embed.setColor(this.inst.color);
 		}
 
+		embed.setTimestamp(new Date());
 
-		embed.setFooter(interaction.user.tag, interaction.user.displayAvatarURL({
-			dynamic: true,
-			format: 'png'
-		}))
-			.setTimestamp(new Date());
+		embed.footer = {
+			text: interaction.user.tag,
+			iconURL: interaction.user.displayAvatarURL({
+				dynamic: true,
+				format: 'png'
+			})
+		};
 
-		const cmd = await this.inst.findCommand(interaction.command.name);
-		let components: MessageActionRow[] = [];
-		if (typeof cmd.components !== 'undefined') {
-			components = [ cmd.row ];
-		}
-
-		return interaction.reply({ embeds: [ embed ],
-			components });
+		return interaction.reply({ embeds: [ embed ] });
 	}
 
 	async handleAutocomplete(int: AutocompleteInteraction): Promise<void> {
@@ -60,24 +65,44 @@ export class InteractionHandler {
 		}
 	}
 
+	private commandHasSub(int: CommandInteraction): boolean {
+		try {
+			int.options.getSubcommand();
+		} catch (e) {
+			return false;
+		}
+		return true;
+	}
+
 	async handleCommand(int: CommandInteraction): Promise<void> {
 		const cmdname = int.commandName;
 		if (this.inst.commands.has(cmdname)) {
 			const cmd = this.inst.commands.get(cmdname);
-			let res: string | MessageEmbed | void;
-			try {
-				res = await cmd.handle(this.inst, int);
-			} catch (e) {
-				return this.replyInt(e, int, true);
+
+			if (this.commandHasSub(int)) {
+				const subname = int.options.getSubcommand();
+				const subcmd = cmd.subcommands.find((c) => c.name === subname);
+				return this.handleCmdRes(subcmd, int);
 			}
-			if (typeof res !== 'undefined') {
-				return this.replyInt(res, int);
-			}
+			return this.handleCmdRes(cmd, int);
+		}
+	}
+
+	async handleCmdRes(cmd: Command, int: CommandInteraction): Promise<void> {
+		let res: string | MessageEmbed | void;
+		try {
+			res = await cmd.handle(this.inst, int);
+		} catch (e) {
+			console.error(e);
+			return this.replyInt(e, int, true);
+		}
+		if (typeof res !== 'undefined') {
+			return this.replyInt(res, int);
 		}
 	}
 
 	async handleContextMenu(int: ContextMenuInteraction): Promise<void> {
-		const channel = await int.guild.channels.fetch(int.channelId) as TextChannel;
+		const channel = (await int.guild.channels.fetch(int.channelId)) as TextChannel;
 		const message = channel.messages.cache.get(int.targetId);
 		const cmd = await this.inst.findCommand(int.command.name);
 		return cmd.handleInteraction(this.inst, int, message);
@@ -94,9 +119,8 @@ export class InteractionHandler {
 		}
 	}
 
-
 	async init(): Promise<void> {
-		this.inst.client.on('interactionCreate', async interaction => {
+		this.inst.client.on('interactionCreate', async (interaction) => {
 			if (interaction.isAutocomplete()) {
 				return this.handleAutocomplete(interaction);
 			}
