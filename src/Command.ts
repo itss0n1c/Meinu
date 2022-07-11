@@ -33,6 +33,7 @@ export class Command<Inst = Meinu> {
 	description: string;
 	type: CommandInfo['type'];
 	options: ApplicationCommandOptionData[] = [];
+	// eslint-disable-next-line no-use-before-define
 	subcommands: Command[] = [];
 	handler: interactionHandler<Inst>;
 	response: CommandRes<Inst>;

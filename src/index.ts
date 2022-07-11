@@ -59,6 +59,9 @@ class Meinu {
 	}
 
 	private compareOption(local: ApplicationCommandOptionData, guild: ApplicationCommandOption[]): boolean {
+		if (guild.length === 0) {
+			return true;
+		}
 		const keys = Object.keys(guild[0]);
 		const matches = Object.fromEntries(Object.keys(local).map((k) => [ k, false ]));
 		for (const k of keys) {
@@ -91,14 +94,16 @@ class Meinu {
 	}
 
 	private async registerTestingCommandForGuild(guild: Guild): Promise<void> {
+		await guild.commands.fetch();
 		console.log(guild.name);
 		if (guild.commands.cache.size > 0) {
 			await Promise.all(
 				guild.commands.cache.map(async (cmd) => {
+					console.log(cmd.name);
 					if (this.commands.has(cmd.name)) {
 						const command = this.commands.get(cmd.name);
 						if (typeof command.options !== 'undefined') {
-							if (command.options.some((o) => this.compareOption(o, cmd.options))) {
+							if (command.options.some((o) => this.compareOption(o, cmd.options ?? []))) {
 								console.log(`Changes to ${cmd.name} locally`);
 								await cmd.edit({
 									name: command.name,
@@ -122,6 +127,7 @@ class Meinu {
 						}
 						// await cmd.edit(command.commandInfo());
 					} else {
+						console.log(`deleting ${cmd.name} on ${guild.name}`);
 						await cmd.delete();
 					}
 				})

@@ -1,7 +1,7 @@
 import { evalc, Meinu } from '../src';
 import sub from './cmds/sub';
 
-Meinu.start({
+new Meinu().start({
 	owners: [ '211160171945263105' ],
 	cmds: [ evalc, sub ],
 	testing: true,
