@@ -34,7 +34,7 @@ class Meinu {
 	handler: InteractionHandler;
 	fullIntents: boolean;
 
-	static async start(opts: Partial<MeinuOptions>): Promise<Meinu> {
+	async start(opts: Partial<MeinuOptions>): Promise<Meinu> {
 		const inst = new Meinu();
 		inst.name = opts.name || 'Meinu';
 		inst.color = opts.color || '#007aff';
