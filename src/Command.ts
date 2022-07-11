@@ -26,7 +26,7 @@ interface CommandInfoChat extends CommandInfoBasics {
 	options?: ApplicationCommandOptionData[];
 }
 
-type CommandInfo = CommandInfoMessage | CommandInfoUser | CommandInfoChat;
+type CommandInfo = CommandInfoChat | CommandInfoMessage | CommandInfoUser;
 
 export class Command<Inst = Meinu> {
 	name: string;
@@ -42,7 +42,8 @@ export class Command<Inst = Meinu> {
 	constructor(opts: CommandInfo) {
 		this.name = opts.name ?? '';
 		this.description = opts.description ?? '';
-		this.type = opts.type ?? 'CHAT_INPUT';
+		opts.type = opts.type ?? 'CHAT_INPUT';
+		this.type = opts.type;
 		if (opts.type === 'CHAT_INPUT') {
 			this.options = opts.options ?? [];
 		}
