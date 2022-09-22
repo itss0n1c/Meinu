@@ -1,10 +1,6 @@
-import { Command } from '../Command';
+import { Command } from '../Command.js';
 
-const help = new Command({
+export default new Command({
 	name: 'help',
 	description: 'show the help info'
-});
-
-help.run(() => 'WIP');
-
-export default help;
+}).addHandler('chatInput', (bot, int) => int.reply('WIP'));

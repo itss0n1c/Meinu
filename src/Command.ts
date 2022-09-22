@@ -1,78 +1,161 @@
-import { ApplicationCommandOptionData, ApplicationCommandType, Collection, CommandInteraction, Interaction, Message, MessageActionRow, MessageActionRowComponent, MessageButton, MessageButtonOptions, MessageSelectMenu, MessageSelectMenuOptions } from 'discord.js';
-import { Meinu } from '.';
-import { promisify } from 'util';
+/* eslint-disable no-unused-vars */
+import {
+	ApplicationCommandOptionData,
+	ApplicationCommandOptionType,
+	ApplicationCommandSubCommandData,
+	ApplicationCommandType,
+	AutocompleteInteraction,
+	ButtonInteraction,
+	ChatInputCommandInteraction,
+	Interaction,
+	InteractionResponse,
+	MessageContextMenuCommandInteraction,
+	ModalSubmitInteraction,
+	SelectMenuInteraction,
+	UserContextMenuCommandInteraction
+} from 'discord.js';
+import { Meinu } from './index.js';
 
-
-export type CommandRes = (bot: Meinu, interaction: CommandInteraction) => string | Promise<string>
-
-export type interactionHandler = (bot: Meinu, interaction: Interaction, msg: Message) => void
-
-
-export interface CommandInfo {
-	name: string
-	cmd_type?: 'CONTEXT' | 'SLASH'
-	description: string
-	options?: ApplicationCommandOptionData[]
-	type?: ApplicationCommandType
-	buttons?: MessageButtonOptions[]
-	selectmenu?: MessageSelectMenuOptions[]
+export interface CommandInteractionHandlers<Inst> {
+	chatInput: (bot: Inst, int: ChatInputCommandInteraction) => Promise<InteractionResponse | void>;
+	button: (bot: Inst, int: ButtonInteraction) => Promise<InteractionResponse | void>;
+	modalSubmit: (bot: Inst, int: ModalSubmitInteraction) => Promise<InteractionResponse | void>;
+	selectMenu: (bot: Inst, int: SelectMenuInteraction) => Promise<InteractionResponse | void>;
+	userContextMenu: (bot: Inst, int: UserContextMenuCommandInteraction) => Promise<InteractionResponse | void>;
+	messageContextMenu: (bot: Inst, int: MessageContextMenuCommandInteraction) => Promise<InteractionResponse | void>;
+	autocomplete: (bot: Inst, int: AutocompleteInteraction) => Promise<InteractionResponse | void>;
 }
 
-export class Command implements CommandInfo {
-	name: string
-	cmd_type?: 'CONTEXT' | 'SLASH'
-	description: string
-	options?: ApplicationCommandOptionData[]
-	type?: ApplicationCommandType
-	components: MessageActionRowComponent[]
-	buttons?: MessageButtonOptions[]
-	selectmenu?: MessageSelectMenuOptions[]
-	row: MessageActionRow
-	handler: interactionHandler
-	private response: CommandRes
+type handler<Inst, T extends keyof CommandInteractionHandlers<Inst>> = Partial<{
+	[K in T]: CommandInteractionHandlers<Inst>[K];
+}>;
 
-	constructor(opts: CommandInfo) {
-		this.name = opts.name;
-		this.description = opts.description;
-		this.options = opts.options || [];
-		this.type = opts.type || 'CHAT_INPUT';
-		this.cmd_type = opts.cmd_type || 'SLASH';
-		this.buttons = opts.buttons || [];
-		this.selectmenu = opts.selectmenu || [];
-		this.initComponents();
-		this.row = new MessageActionRow();
-		this.row.components = this.components;
-	}
+interface CommandInfoBasics {
+	name: string;
+	ownersOnly?: boolean;
+	dmPermission?: boolean;
+}
 
-	private initComponents(): void {
-		if (this.buttons.length > 0 || this.selectmenu.length > 0) {
-			this.components = [];
-			for (const button of this.buttons) {
-				this.components.push(new MessageButton(button));
-			}
-			for (const menu of this.selectmenu) {
-				this.components.push(new MessageSelectMenu(menu));
-			}
+interface CommandInfoMessage extends CommandInfoBasics {
+	type: ApplicationCommandType.Message;
+}
+
+interface CommandInfoUser extends CommandInfoBasics {
+	type: ApplicationCommandType.User;
+}
+
+interface CommandInfoChat extends CommandInfoBasics {
+	type?: ApplicationCommandType.ChatInput;
+	description: string;
+	options?: ApplicationCommandOptionData[];
+}
+
+export type CommandInfo = CommandInfoChat | CommandInfoMessage | CommandInfoUser;
+
+// eslint-disable-next-line no-unused-vars
+type HasPermission<Inst = Meinu> = (bot: Inst, int: Interaction) => Promise<boolean>;
+
+interface SubCommandGroup<T> {
+	name: string;
+	description: string;
+	commands: T[];
+}
+
+export class Command<Inst = Meinu> {
+	name: string;
+	description: string;
+	dmPermission: boolean;
+	type: CommandInfo['type'];
+	options: ApplicationCommandOptionData[] = [];
+	// eslint-disable-next-line no-use-before-define
+	subcommands: Command<Inst>[] = [];
+	private handlers: handler<Inst, keyof CommandInteractionHandlers<Inst>> = {};
+	permissionRes: HasPermission<Inst>;
+	ownersOnly: boolean;
+
+	constructor(info: CommandInfo) {
+		this.name = info.name ?? '';
+		this.ownersOnly = info.ownersOnly ?? false;
+		info.type = info.type ?? ApplicationCommandType.ChatInput;
+		this.type = info.type;
+		this.dmPermission = info.dmPermission;
+		if (info.type === ApplicationCommandType.ChatInput) {
+			this.description = info.description ?? '';
+			this.options = info.options ?? [];
 		}
 	}
 
-	async interactionHandler(cb: interactionHandler): Promise<void> {
-		this.handler = cb;
+	addSubCommandGroup(group: SubCommandGroup<Command<Inst>>): this {
+		for (const cmd of group.commands) {
+			this.subcommands.push(cmd);
+		}
+		this.options.push({
+			name: group.name,
+			description: group.description,
+			type: ApplicationCommandOptionType.SubcommandGroup,
+			options: group.commands.map((c) => {
+				const opts: ApplicationCommandOptionData = {
+					name: c.name,
+					description: c.description,
+					type: ApplicationCommandOptionType.Subcommand
+				};
+				if (c.options.length > 0) {
+					opts.options = c.options as ApplicationCommandSubCommandData['options'];
+				}
+				return opts;
+			})
+		});
+
+		return this;
 	}
 
-	async handleInteraction(bot: Meinu, interaction: Interaction, msg: Message): Promise<void> {
-		return this.handler(bot, interaction, msg);
+	addSubCommands(cmds: Command<Inst>[]): this {
+		this.subcommands.push(...cmds);
+		for (const cmd of cmds) {
+			const opts: ApplicationCommandOptionData = {
+				name: cmd.name,
+				description: cmd.description,
+				type: ApplicationCommandOptionType.Subcommand
+			};
+			if (cmd.options.length > 0) {
+				opts.options = cmd.options as ApplicationCommandSubCommandData['options'];
+			}
+			this.options.push(opts);
+		}
+		return this;
 	}
 
-	run(cb: CommandRes): void {
-		this.response = cb;
+	commandInfo(): CommandInfo {
+		const res: CommandInfo = {
+			name: this.name,
+			description: this.description ?? '',
+			type: this.type
+		};
+		if (typeof this.dmPermission !== 'undefined') {
+			res.dmPermission = this.dmPermission;
+		}
+		if (res.type === ApplicationCommandType.ChatInput) {
+			if (this.options.length > 0) {
+				res.options = this.options;
+			}
+		}
+
+		return res;
 	}
 
-	async handle(bot: Meinu, interaction: CommandInteraction): Promise<string> {
-		return this.response(bot, interaction);
+	addHandler<T extends keyof CommandInteractionHandlers<Inst>>(type: T, handler: CommandInteractionHandlers<Inst>[T]): this {
+		this.handlers[type] = handler as any;
+		return this;
 	}
 
-	wait = promisify(setTimeout);
+	hasPermission(cb: HasPermission<Inst>): this {
+		this.permissionRes = cb;
+		return this;
+	}
+
+	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<InteractionResponse | void> {
+		if (this.handlers[type]) {
+			return this.handlers[type](bot, int as any);
+		}
+	}
 }
-
-export class Commands extends Collection<string, Command> {}

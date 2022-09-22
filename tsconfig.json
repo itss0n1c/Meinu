@@ -2,15 +2,16 @@
 	"compilerOptions": {
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
-		"lib": ["ES2020"],
-		"module": "CommonJS",
-		"moduleResolution": "Node",
+		"lib": ["ESNext"],
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
 		"outDir": "dist/",
 		"resolveJsonModule": true,
 		"rootDir": "src/",
-		"target": "ES2020",
-		"downlevelIteration": true,
-		"esModuleInterop": true
+		"target": "ES2022",
+		"esModuleInterop": true,
+		"strict": false,
+		"skipLibCheck": true
 	},
 	"exclude": ["tests/", "dist/"]
 }

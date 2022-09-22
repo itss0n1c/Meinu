@@ -1,114 +1,177 @@
-import { Client, Intents } from 'discord.js';
-import { Command, Commands } from './Command';
+import { Client, Collection, ColorResolvable, GatewayIntentBits, Guild } from 'discord.js';
 import { config } from 'dotenv';
-import { defaultCommands } from './cmds';
-import { InteractionHandler } from './InteractionHandler';
+import { Command } from './Command.js';
+import { InteractionHandler } from './InteractionHandler.js';
 
+export interface MeinuOptions {
+	color: ColorResolvable;
+	name: string;
+	owners: string[];
+	guildCommands: Command[];
+	globalCommands: Command[];
+	specificGuildId: string;
+	fullIntents: boolean;
+	token: string;
+}
 
-export class Meinu {
-	client: Client
-	commands = new Commands()
-	testing:boolean
-	owners: string[]
-	handler: InteractionHandler
+class Meinu {
+	name: string;
+	color: ColorResolvable;
+	client: Client;
+	guildCommands: Collection<string, Command>;
+	globalCommands: Collection<string, Command>;
+	specificGuildId: string;
+	owners: string[];
+	handler: InteractionHandler;
+	fullIntents: boolean;
 
-	constructor(owners?: string[], cmds?: Command[]) {
-		this.owners = owners || [];
-		this.init(cmds);
+	async create(opts: Partial<MeinuOptions>): Promise<this> {
+		this.name = opts.name ?? 'Meinu';
+		this.color = opts.color ?? '#007aff';
+		this.owners = opts.owners ?? [];
+		if (opts.specificGuildId) {
+			this.specificGuildId = opts.specificGuildId;
+		}
+		this.fullIntents = opts.fullIntents ?? false;
+		opts.fullIntents = this.fullIntents;
+
+		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name, cmd ]));
+		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name, cmd ]));
+
+		return this.init(opts);
 	}
 
+	get guild(): Guild {
+		return this.client.guilds.cache.get(this.specificGuildId);
+	}
 
-	async registerCommands(): Promise<void> {
-		for (const cmd of [ ...this.commands.values() ]) {
-			await this.client.application.commands.create({
-				name: cmd.name,
-				description: cmd.description
-			});
+	findCommand(cmd: string): Command {
+		let command = this.globalCommands.get(cmd);
+		if (typeof command === 'undefined') {
+			command = this.guildCommands.get(cmd);
+			if (typeof command === 'undefined') {
+				return null;
+			}
+			return command;
+		}
+		return command;
+	}
+
+	private async initCommands(): Promise<void> {
+		console.log('Loading global commands...');
+		await this.registerGlobalCommands();
+
+		console.log('Loading guild commands...');
+		if (this.specificGuildId) {
+			await this.registerGuildCommands(this.client.guilds.cache.get(this.specificGuildId));
+		} else {
+			await this.registerAllGuildCommands();
 		}
 	}
 
-	async registerTestingCommands(): Promise<void> {
-		console.log('hi');
-		const guild = this.client.guilds.cache.get('744006904958812210');
+	private async registerGlobalCommands(): Promise<void> {
+		await this.client.application.commands.fetch();
+		const globalCmds = this.client.application.commands;
 
-		await guild.commands.fetch();
-		if (guild.commands.cache.size > 0) {
-			for await (const cmd of [ ...guild.commands.cache.values() ]) {
-				if (this.commands.has(cmd.name)) {
-					const command = this.commands.get(cmd.name);
-					if (command.cmd_type === 'SLASH') {
-						await cmd.edit({
-							name: cmd.name,
-							description: command.description,
-							options: command.options,
-							type: 'CHAT_INPUT'
-						});
-					}
-				} else {
-					await cmd.delete();
+		for (const cmd of globalCmds.cache.values()) {
+			if (!this.globalCommands.has(cmd.name)) {
+				console.log(`Removing global command ${cmd.name}`);
+				await cmd.delete();
+			}
+		}
+		console.time('global commands');
+		for (const c of this.globalCommands.values()) {
+			const find = globalCmds.cache.find((cmd) => cmd.name === c.name);
+			if (!find) {
+				console.log(`Registering global command ${c.name}`);
+				await globalCmds.create(c.commandInfo());
+			} else {
+				const shouldUpdate = !find.equals(c.commandInfo());
+				console.log(c.name, shouldUpdate);
+				if (shouldUpdate) {
+					await globalCmds.edit(find, c.commandInfo());
 				}
 			}
-			console.log('found commands');
 		}
+		console.timeEnd('global commands');
+	}
 
-		for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'SLASH')) {
-			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-				await guild.commands.create({
-					name: cmd.name,
-					description: cmd.description,
-					options: cmd.options,
-					type: 'CHAT_INPUT'
-				});
+	private async registerAllGuildCommands(): Promise<void> {
+		await Promise.allSettled(this.client.guilds.cache.map((g) => this.registerGuildCommands(g)));
+	}
+
+	private async registerGuildCommands(guild: Guild): Promise<void> {
+		await guild.commands.fetch();
+
+		for (const cmd of guild.commands.cache.values()) {
+			if (!this.guildCommands.has(cmd.name)) {
+				console.log(`Removing guild command ${cmd.name} from ${guild.name}`);
+				await cmd.delete();
 			}
 		}
 
-		for await (const cmd of [ ...this.commands.values() ].filter(c => c.cmd_type === 'CONTEXT')) {
-			if (typeof guild.commands.cache.find(c => c.name === cmd.name) === 'undefined') {
-				await guild.commands.create({
-					name: cmd.name,
-					type: 'MESSAGE'
-				});
+		console.time(`guild commands ${guild.name}`);
+		for (const c of this.guildCommands.values()) {
+			const find = guild.commands.cache.find((cmd) => cmd.name === c.name);
+			if (!find) {
+				console.log(`Registering guild command ${c.name} in ${guild.name}`);
+				await guild.commands.create(c.commandInfo());
+			} else {
+				const shouldUpdate = !find.equals(c.commandInfo());
+				console.log(c.name, shouldUpdate);
+				if (shouldUpdate) {
+					await guild.commands.edit(find, c.commandInfo());
+				}
 			}
 		}
-
-		console.log(this.commands);
+		console.timeEnd(`guild commands ${guild.name}`);
 	}
 
-	async initCommands(cmds: Command[]): Promise<void> {
-		for (const cmd of defaultCommands) {
-			this.commands.set(cmd.name, cmd);
-		}
-		if (typeof cmds !== 'undefined') {
-			for (const cmd of cmds) {
-				this.commands.set(cmd.name, cmd);
-			}
-		}
-		if (this.testing) {
-			return this.registerTestingCommands();
-		}
-		return this.registerCommands();
-	}
-
-	async findCommand(cmd: string): Promise<Command> {
-		if (this.commands.has(cmd)) {
-			return this.commands.get(cmd);
-		}
-		throw 404;
-	}
-
-	async init(cmds?: Command[]): Promise<void> {
+	private async init(opts: Partial<MeinuOptions>): Promise<this> {
 		config();
-		this.testing = Boolean(process.env.TESTING);
 
-		this.client = new Client({ intents: [ Intents.FLAGS.GUILDS ] });
+		if (opts.fullIntents) {
+			this.client = new Client({
+				intents: [
+					GatewayIntentBits.DirectMessageReactions,
+					GatewayIntentBits.DirectMessageTyping,
+					GatewayIntentBits.DirectMessages,
+					GatewayIntentBits.GuildBans,
+					GatewayIntentBits.GuildEmojisAndStickers,
+					GatewayIntentBits.GuildIntegrations,
+					GatewayIntentBits.GuildInvites,
+					GatewayIntentBits.GuildMembers,
+					GatewayIntentBits.GuildMessageReactions,
+					GatewayIntentBits.GuildMessageTyping,
+					GatewayIntentBits.GuildMessages,
+					GatewayIntentBits.GuildPresences,
+					GatewayIntentBits.GuildScheduledEvents,
+					GatewayIntentBits.GuildVoiceStates,
+					GatewayIntentBits.GuildWebhooks,
+					GatewayIntentBits.Guilds,
+					GatewayIntentBits.MessageContent
+				]
+			});
+		} else {
+			this.client = new Client({ intents: [ GatewayIntentBits.Guilds ] });
+		}
 
-		this.client.on('ready', async () => {
-			await this.initCommands(cmds);
-			this.handler = new InteractionHandler(this);
-			console.log(`Logged in as ${this.client.user.tag}!`);
-		});
+		if (typeof process.env.TOKEN === 'undefined' && typeof opts.token === 'undefined') {
+			throw 'Token not defined.';
+		}
 
+		await this.client.login(process.env.TOKEN ?? opts.token);
 
-		this.client.login(process.env.TOKEN);
+		await new Promise((res) => this.client.once('ready', res));
+
+		await this.initCommands();
+
+		this.handler = await InteractionHandler.create(this);
+		console.log(`Logged in as ${this.client.user.tag}!`);
+		return this;
 	}
 }
+
+export * from 'discord.js';
+export * from './cmds/index.js';
+export { Meinu, Command };
