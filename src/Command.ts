@@ -15,6 +15,7 @@ import {
 	UserContextMenuCommandInteraction
 } from 'discord.js';
 import { Meinu } from './index.js';
+import { Locales, PartialLocales, setLocales } from './Locales.js';
 
 export interface CommandInteractionHandlers<Inst> {
 	chatInput: (bot: Inst, int: ChatInputCommandInteraction) => Promise<InteractionResponse | void>;
@@ -31,7 +32,7 @@ type handler<Inst, T extends keyof CommandInteractionHandlers<Inst>> = Partial<{
 }>;
 
 interface CommandInfoBasics {
-	name: string;
+	name: string | Locales;
 	ownersOnly?: boolean;
 	dmPermission?: boolean;
 }
@@ -46,24 +47,31 @@ interface CommandInfoUser extends CommandInfoBasics {
 
 interface CommandInfoChat extends CommandInfoBasics {
 	type?: ApplicationCommandType.ChatInput;
-	description: string;
+	description: string | Locales;
 	options?: ApplicationCommandOptionData[];
 }
 
 export type CommandInfo = CommandInfoChat | CommandInfoMessage | CommandInfoUser;
 
+export type CommandInfoExport = CommandInfo & {
+	name: string;
+	nameLocalizations: PartialLocales;
+	description: string;
+	descriptionLocalizations: PartialLocales;
+};
+
 // eslint-disable-next-line no-unused-vars
 type HasPermission<Inst = Meinu> = (bot: Inst, int: Interaction) => Promise<boolean>;
 
 interface SubCommandGroup<T> {
-	name: string;
-	description: string;
+	name: string | Locales;
+	description: string | Locales;
 	commands: T[];
 }
 
 export class Command<Inst = Meinu> {
-	name: string;
-	description: string;
+	name: Locales;
+	description: Locales;
 	dmPermission: boolean;
 	type: CommandInfo['type'];
 	options: ApplicationCommandOptionData[] = [];
@@ -74,13 +82,13 @@ export class Command<Inst = Meinu> {
 	ownersOnly: boolean;
 
 	constructor(info: CommandInfo) {
-		this.name = info.name ?? '';
+		this.name = info.name instanceof Locales ? info.name : setLocales({ default: info.name });
 		this.ownersOnly = info.ownersOnly ?? false;
 		info.type = info.type ?? ApplicationCommandType.ChatInput;
 		this.type = info.type;
 		this.dmPermission = info.dmPermission;
 		if (info.type === ApplicationCommandType.ChatInput) {
-			this.description = info.description ?? '';
+			this.description = info.description instanceof Locales ? info.description : setLocales({ default: info.description });
 			this.options = info.options ?? [];
 		}
 	}
@@ -89,22 +97,47 @@ export class Command<Inst = Meinu> {
 		for (const cmd of group.commands) {
 			this.subcommands.push(cmd);
 		}
-		this.options.push({
-			name: group.name,
-			description: group.description,
+		const opts: Partial<ApplicationCommandOptionData> = {
 			type: ApplicationCommandOptionType.SubcommandGroup,
 			options: group.commands.map((c) => {
-				const opts: ApplicationCommandOptionData = {
-					name: c.name,
-					description: c.description,
+				const opts: Partial<ApplicationCommandSubCommandData> = {
 					type: ApplicationCommandOptionType.Subcommand
 				};
+				opts.name = c.name.get('default');
+				if (c.description instanceof Locales) {
+					opts.description = c.description.get('default');
+					if (c.description.size > 1) {
+						opts.descriptionLocalizations = c.description.toJSON();
+					}
+				}
+
+				if (c.name.size > 1) {
+					opts.nameLocalizations = c.name.toJSON();
+				}
+
 				if (c.options.length > 0) {
 					opts.options = c.options as ApplicationCommandSubCommandData['options'];
 				}
-				return opts;
+				return opts as ApplicationCommandSubCommandData;
 			})
-		});
+		};
+		if (group.name instanceof Locales) {
+			opts.name = group.name.get('default');
+			if (group.name.size > 1) {
+				opts.nameLocalizations = group.name.toJSON();
+			}
+		} else {
+			opts.name = group.name;
+		}
+		if (group.description instanceof Locales) {
+			opts.description = group.description.get('default');
+			if (group.description.size > 1) {
+				opts.descriptionLocalizations = group.description.toJSON();
+			}
+		} else {
+			opts.description = group.description;
+		}
+		this.options.push(opts as ApplicationCommandOptionData);
 
 		return this;
 	}
@@ -112,25 +145,48 @@ export class Command<Inst = Meinu> {
 	addSubCommands(cmds: Command<Inst>[]): this {
 		this.subcommands.push(...cmds);
 		for (const cmd of cmds) {
-			const opts: ApplicationCommandOptionData = {
-				name: cmd.name,
-				description: cmd.description,
+			const opts: Partial<ApplicationCommandOptionData> = {
 				type: ApplicationCommandOptionType.Subcommand
 			};
 			if (cmd.options.length > 0) {
 				opts.options = cmd.options as ApplicationCommandSubCommandData['options'];
 			}
-			this.options.push(opts);
+
+			opts.name = cmd.name.get('default');
+			opts.description = cmd.description.get('default');
+
+			if (cmd.name.size > 1) {
+				opts.nameLocalizations = cmd.name.toJSON();
+			}
+			if (cmd.description.size > 1) {
+				opts.descriptionLocalizations = cmd.description.toJSON();
+			}
+
+			this.options.push(opts as ApplicationCommandOptionData);
 		}
 		return this;
 	}
 
-	commandInfo(): CommandInfo {
-		const res: CommandInfo = {
-			name: this.name,
-			description: this.description ?? '',
+	commandInfo(): CommandInfoExport {
+		const res: Partial<CommandInfoExport> = {
 			type: this.type
 		};
+		res.name = this.name.get('default');
+		if (this.description) {
+			res.description = this.description.get('default');
+			if (this.description.size > 1) {
+				res.descriptionLocalizations = this.description.toJSON();
+			}
+		} else {
+			res.description = '';
+		}
+		if (this.name.size > 1) {
+			res.nameLocalizations = this.name.toJSON();
+		}
+
+		if (this.description && this.description.size > 1) {
+			res.descriptionLocalizations = this.description.toJSON();
+		}
 		if (typeof this.dmPermission !== 'undefined') {
 			res.dmPermission = this.dmPermission;
 		}
@@ -140,7 +196,7 @@ export class Command<Inst = Meinu> {
 			}
 		}
 
-		return res;
+		return res as CommandInfoExport;
 	}
 
 	addHandler<T extends keyof CommandInteractionHandlers<Inst>>(type: T, handler: CommandInteractionHandlers<Inst>[T]): this {

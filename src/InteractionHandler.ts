@@ -61,7 +61,7 @@ export class InteractionHandler {
 			if (int.isChatInputCommand() || int.type === InteractionType.ApplicationCommandAutocomplete) {
 				try {
 					const sub = int.options.getSubcommand();
-					const cmd = main.subcommands.find((c) => c.name === sub);
+					const cmd = main.subcommands.find((c) => c.name.get('default') === sub);
 					if (!cmd) {
 						throw 404;
 					}
@@ -79,7 +79,7 @@ export class InteractionHandler {
 					maincmd = this.inst.findCommand(parent);
 					cmds.push(maincmd);
 					if (sub.length > 0) {
-						const cmd = maincmd.subcommands.find((c) => c.name === sub[0]);
+						const cmd = maincmd.subcommands.find((c) => c.name.get('default') === sub[0]);
 						if (cmd) {
 							cmds.push(cmd);
 						}
@@ -98,7 +98,7 @@ export class InteractionHandler {
 			if (rest.length > 0) {
 				const [ subname, id ] = rest;
 				console.log(subname, id);
-				const subcmd = cmd.subcommands.find((c) => c.name === subname);
+				const subcmd = cmd.subcommands.find((c) => c.name.get('default') === subname);
 				if (subcmd) {
 					cmds.push(subcmd);
 				}
@@ -119,7 +119,7 @@ export class InteractionHandler {
 	}
 
 	async cmdPermissionHandler(cmd: Command, int: Interaction): Promise<boolean> {
-		console.log(`testing permission for ${cmd.name} for interaction ${int.id} by ${int.user.tag}`);
+		console.log(`testing permission for ${cmd.name.get('default')} for interaction ${int.id} by ${int.user.tag}`);
 
 		if (this.inst.owners.includes(int.user.id)) {
 			return true;

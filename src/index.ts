@@ -35,8 +35,8 @@ class Meinu {
 		this.fullIntents = opts.fullIntents ?? false;
 		opts.fullIntents = this.fullIntents;
 
-		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name, cmd ]));
-		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name, cmd ]));
+		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name.get('default'), cmd ]));
+		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name.get('default'), cmd ]));
 
 		return this.init(opts);
 	}
@@ -81,13 +81,13 @@ class Meinu {
 		}
 		console.time('global commands');
 		for (const c of this.globalCommands.values()) {
-			const find = globalCmds.cache.find((cmd) => cmd.name === c.name);
+			const find = globalCmds.cache.find((cmd) => cmd.name === c.name.get('default'));
 			if (!find) {
-				console.log(`Registering global command ${c.name}`);
+				console.log(`Registering global command ${c.name.get('default')}`);
 				await globalCmds.create(c.commandInfo());
 			} else {
 				const shouldUpdate = !find.equals(c.commandInfo());
-				console.log(c.name, shouldUpdate);
+				console.log(c.name.get('default'), shouldUpdate);
 				if (shouldUpdate) {
 					await globalCmds.edit(find, c.commandInfo());
 				}
@@ -112,13 +112,13 @@ class Meinu {
 
 		console.time(`guild commands ${guild.name}`);
 		for (const c of this.guildCommands.values()) {
-			const find = guild.commands.cache.find((cmd) => cmd.name === c.name);
+			const find = guild.commands.cache.find((cmd) => cmd.name === c.name.get('default'));
 			if (!find) {
-				console.log(`Registering guild command ${c.name} in ${guild.name}`);
+				console.log(`Registering guild command ${c.name.get('default')} in ${guild.name}`);
 				await guild.commands.create(c.commandInfo());
 			} else {
 				const shouldUpdate = !find.equals(c.commandInfo());
-				console.log(c.name, shouldUpdate);
+				console.log(c.name.get('default'), shouldUpdate);
 				if (shouldUpdate) {
 					await guild.commands.edit(find, c.commandInfo());
 				}
@@ -174,4 +174,5 @@ class Meinu {
 
 export * from 'discord.js';
 export * from './cmds/index.js';
+export * from './Locales.js';
 export { Meinu, Command };
