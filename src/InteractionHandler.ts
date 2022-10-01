@@ -76,9 +76,8 @@ export class InteractionHandler {
 			}
 			if (msg_int.type === InteractionType.ApplicationCommand) {
 				let maincmd = this.inst.findCommand(msg_int.commandName);
-				if (!maincmd) {
-					throw new Error('Command not found.');
-				}
+				console.log(msg_int);
+
 				if (!maincmd) {
 					const [ parent, ...sub ] = msg_int.commandName.split(' ');
 					console.log(parent, sub, msg_int);

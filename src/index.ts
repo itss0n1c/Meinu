@@ -72,9 +72,9 @@ class Meinu {
 
 	findCommand(cmd: string): Command | null {
 		let command = this.globalCommands.get(cmd);
-		if (typeof command === 'undefined') {
+		if (!command) {
 			command = this.guildCommands.get(cmd);
-			if (typeof command === 'undefined') {
+			if (!command) {
 				return null;
 			}
 			return command;
