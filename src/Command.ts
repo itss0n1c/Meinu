@@ -72,7 +72,7 @@ interface SubCommandGroup<T> {
 export class Command<Inst = Meinu> {
 	name: Locales;
 	description: Locales;
-	dmPermission: boolean;
+	dmPermission: boolean | null;
 	type: CommandInfo['type'];
 	options: ApplicationCommandOptionData[] = [];
 	// eslint-disable-next-line no-use-before-define
@@ -86,11 +86,14 @@ export class Command<Inst = Meinu> {
 		this.ownersOnly = info.ownersOnly ?? false;
 		info.type = info.type ?? ApplicationCommandType.ChatInput;
 		this.type = info.type;
-		this.dmPermission = info.dmPermission;
+		this.dmPermission = info.dmPermission ?? null;
 		if (info.type === ApplicationCommandType.ChatInput) {
 			this.description = info.description instanceof Locales ? info.description : setLocales({ default: info.description });
 			this.options = info.options ?? [];
+		} else {
+			this.description = setLocales({ default: '' });
 		}
+		this.permissionRes = () => Promise.resolve(true);
 	}
 
 	addSubCommandGroup(group: SubCommandGroup<Command<Inst>>): this {
@@ -172,14 +175,12 @@ export class Command<Inst = Meinu> {
 			type: this.type
 		};
 		res.name = this.name.get('default');
-		if (this.description) {
-			res.description = this.description.get('default');
-			if (this.description.size > 1) {
-				res.descriptionLocalizations = this.description.toJSON();
-			}
-		} else {
-			res.description = '';
+
+		res.description = this.description.get('default');
+		if (this.description.size > 1) {
+			res.descriptionLocalizations = this.description.toJSON();
 		}
+
 		if (this.name.size > 1) {
 			res.nameLocalizations = this.name.toJSON();
 		}
@@ -187,7 +188,7 @@ export class Command<Inst = Meinu> {
 		if (this.description && this.description.size > 1) {
 			res.descriptionLocalizations = this.description.toJSON();
 		}
-		if (typeof this.dmPermission !== 'undefined') {
+		if (this.dmPermission !== null) {
 			res.dmPermission = this.dmPermission;
 		}
 		if (res.type === ApplicationCommandType.ChatInput) {
@@ -211,7 +212,8 @@ export class Command<Inst = Meinu> {
 
 	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<InteractionResponse | void> {
 		if (this.handlers[type]) {
-			return this.handlers[type](bot, int as any);
+			const handler = this.handlers[type] as Required<CommandInteractionHandlers<Inst>>[Type];
+			return handler(bot, int as any);
 		}
 	}
 }

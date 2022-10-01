@@ -13,6 +13,10 @@ export class Locales extends Map<Locale, string> {
 		}
 		return obj;
 	}
+
+	get default(): string {
+		return this.get('default') ?? '';
+	}
 }
 
 export function setLocales(locales: PartialLocales): Locales {

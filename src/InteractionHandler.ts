@@ -6,36 +6,35 @@ import { Meinu } from './index.js';
 export class InteractionHandler {
 	inst: Meinu;
 
-	static async create(inst: Meinu): Promise<InteractionHandler> {
-		const handler = new InteractionHandler();
-		handler.inst = inst;
+	constructor(inst: Meinu) {
+		this.inst = inst;
 
-		handler.inst.client.on('interactionCreate', async (interaction) => {
+		this.inst.client.on('interactionCreate', async (interaction) => {
 			try {
 				switch (interaction.type) {
 					case InteractionType.ApplicationCommandAutocomplete:
-						await handler.handleInteraction('autocomplete', interaction);
+						await this.handleInteraction('autocomplete', interaction);
 						break;
 					case InteractionType.ModalSubmit:
-						await handler.handleInteraction('modalSubmit', interaction);
+						await this.handleInteraction('modalSubmit', interaction);
 						break;
 					case InteractionType.MessageComponent:
 						if (interaction.isButton()) {
-							await handler.handleInteraction('button', interaction);
+							await this.handleInteraction('button', interaction);
 						}
 						if (interaction.isSelectMenu()) {
-							await handler.handleInteraction('selectMenu', interaction);
+							await this.handleInteraction('selectMenu', interaction);
 						}
 						break;
 					case InteractionType.ApplicationCommand:
 						if (interaction.isChatInputCommand()) {
-							await handler.handleInteraction('chatInput', interaction);
+							await this.handleInteraction('chatInput', interaction);
 						}
 						if (interaction.isMessageContextMenuCommand()) {
-							await handler.handleInteraction('messageContextMenu', interaction);
+							await this.handleInteraction('messageContextMenu', interaction);
 						}
 						if (interaction.isUserContextMenuCommand()) {
-							await handler.handleInteraction('userContextMenu', interaction);
+							await this.handleInteraction('userContextMenu', interaction);
 						}
 						break;
 				}
@@ -43,20 +42,21 @@ export class InteractionHandler {
 				console.error(e);
 				if (interaction.isRepliable() && !interaction.replied) {
 					await interaction.reply({
-						content: e.message ?? 'An error occured while executing the command.',
+						content: e instanceof Error ? e.message : 'An error occured while executing the command.',
 						ephemeral: true
 					});
 				}
 			}
 		});
-
-		return handler;
 	}
 
 	resolveCommand(int: Interaction): Command[] {
 		const cmds: Command[] = [];
 		if (int.isCommand() || int.type === InteractionType.ApplicationCommandAutocomplete || int.isContextMenuCommand()) {
 			const main = this.inst.findCommand(int.commandName);
+			if (!main) {
+				throw new Error('Command not found.');
+			}
 			cmds.push(main);
 			if (int.isChatInputCommand() || int.type === InteractionType.ApplicationCommandAutocomplete) {
 				try {
@@ -71,12 +71,21 @@ export class InteractionHandler {
 		}
 		if (int.isSelectMenu() || int.isButton()) {
 			const msg_int = int.message.interaction;
+			if (!msg_int) {
+				throw new Error('Message interaction not found.');
+			}
 			if (msg_int.type === InteractionType.ApplicationCommand) {
 				let maincmd = this.inst.findCommand(msg_int.commandName);
+				if (!maincmd) {
+					throw new Error('Command not found.');
+				}
 				if (!maincmd) {
 					const [ parent, ...sub ] = msg_int.commandName.split(' ');
 					console.log(parent, sub, msg_int);
 					maincmd = this.inst.findCommand(parent);
+					if (!maincmd) {
+						throw new Error('Command not found.');
+					}
 					cmds.push(maincmd);
 					if (sub.length > 0) {
 						const cmd = maincmd.subcommands.find((c) => c.name.get('default') === sub[0]);
@@ -94,6 +103,9 @@ export class InteractionHandler {
 			const [ cmdname, ...rest ] = int.customId.split('-');
 
 			const cmd = this.inst.findCommand(cmdname);
+			if (!cmd) {
+				throw new Error('Command not found.');
+			}
 			cmds.push(cmd);
 			if (rest.length > 0) {
 				const [ subname, id ] = rest;

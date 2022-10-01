@@ -11,7 +11,6 @@ export interface MeinuOptions {
 	globalCommands: Command[];
 	specificGuildId: string;
 	fullIntents: boolean;
-	token: string;
 }
 
 class Meinu {
@@ -20,12 +19,12 @@ class Meinu {
 	client: Client;
 	guildCommands: Collection<string, Command>;
 	globalCommands: Collection<string, Command>;
-	specificGuildId: string;
+	specificGuildId: string | undefined;
 	owners: string[];
-	handler: InteractionHandler;
+	handler: InteractionHandler | undefined;
 	fullIntents: boolean;
 
-	async create(opts: Partial<MeinuOptions>): Promise<this> {
+	constructor(opts: Partial<MeinuOptions>) {
 		this.name = opts.name ?? 'Meinu';
 		this.color = opts.color ?? '#007aff';
 		this.owners = opts.owners ?? [];
@@ -35,17 +34,43 @@ class Meinu {
 		this.fullIntents = opts.fullIntents ?? false;
 		opts.fullIntents = this.fullIntents;
 
-		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name.get('default'), cmd ]));
-		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name.get('default'), cmd ]));
+		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name.default, cmd ]));
+		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name.default, cmd ]));
 
-		return this.init(opts);
+		if (opts.fullIntents) {
+			this.client = new Client({
+				intents: [
+					GatewayIntentBits.DirectMessageReactions,
+					GatewayIntentBits.DirectMessageTyping,
+					GatewayIntentBits.DirectMessages,
+					GatewayIntentBits.GuildBans,
+					GatewayIntentBits.GuildEmojisAndStickers,
+					GatewayIntentBits.GuildIntegrations,
+					GatewayIntentBits.GuildInvites,
+					GatewayIntentBits.GuildMembers,
+					GatewayIntentBits.GuildMessageReactions,
+					GatewayIntentBits.GuildMessageTyping,
+					GatewayIntentBits.GuildMessages,
+					GatewayIntentBits.GuildPresences,
+					GatewayIntentBits.GuildScheduledEvents,
+					GatewayIntentBits.GuildVoiceStates,
+					GatewayIntentBits.GuildWebhooks,
+					GatewayIntentBits.Guilds,
+					GatewayIntentBits.MessageContent
+				]
+			});
+		} else {
+			this.client = new Client({ intents: [ GatewayIntentBits.Guilds ] });
+		}
+
+		this.handler = undefined;
 	}
 
-	get guild(): Guild {
-		return this.client.guilds.cache.get(this.specificGuildId);
+	get guild(): Guild | undefined {
+		return this.client.guilds.cache.get(this.specificGuildId ?? '');
 	}
 
-	findCommand(cmd: string): Command {
+	findCommand(cmd: string): Command | null {
 		let command = this.globalCommands.get(cmd);
 		if (typeof command === 'undefined') {
 			command = this.guildCommands.get(cmd);
@@ -63,13 +88,16 @@ class Meinu {
 
 		console.log('Loading guild commands...');
 		if (this.specificGuildId) {
-			await this.registerGuildCommands(this.client.guilds.cache.get(this.specificGuildId));
+			await this.registerGuildCommands(this.guild as Guild);
 		} else {
 			await this.registerAllGuildCommands();
 		}
 	}
 
 	private async registerGlobalCommands(): Promise<void> {
+		if (!this.client.application) {
+			throw new Error('Client application is not defined');
+		}
 		await this.client.application.commands.fetch();
 		const globalCmds = this.client.application.commands;
 
@@ -127,46 +155,23 @@ class Meinu {
 		console.timeEnd(`guild commands ${guild.name}`);
 	}
 
-	private async init(opts: Partial<MeinuOptions>): Promise<this> {
+	async init(_token?: string): Promise<this> {
 		config();
-
-		if (opts.fullIntents) {
-			this.client = new Client({
-				intents: [
-					GatewayIntentBits.DirectMessageReactions,
-					GatewayIntentBits.DirectMessageTyping,
-					GatewayIntentBits.DirectMessages,
-					GatewayIntentBits.GuildBans,
-					GatewayIntentBits.GuildEmojisAndStickers,
-					GatewayIntentBits.GuildIntegrations,
-					GatewayIntentBits.GuildInvites,
-					GatewayIntentBits.GuildMembers,
-					GatewayIntentBits.GuildMessageReactions,
-					GatewayIntentBits.GuildMessageTyping,
-					GatewayIntentBits.GuildMessages,
-					GatewayIntentBits.GuildPresences,
-					GatewayIntentBits.GuildScheduledEvents,
-					GatewayIntentBits.GuildVoiceStates,
-					GatewayIntentBits.GuildWebhooks,
-					GatewayIntentBits.Guilds,
-					GatewayIntentBits.MessageContent
-				]
-			});
-		} else {
-			this.client = new Client({ intents: [ GatewayIntentBits.Guilds ] });
-		}
-
-		if (typeof process.env.TOKEN === 'undefined' && typeof opts.token === 'undefined') {
+		if (typeof process.env.TOKEN === 'undefined' && typeof _token === 'undefined') {
 			throw 'Token not defined.';
 		}
 
-		await this.client.login(process.env.TOKEN ?? opts.token);
+		await this.client.login(process.env.TOKEN ?? _token);
 
 		await new Promise((res) => this.client.once('ready', res));
 
+		if (!this.client.user) {
+			throw new Error('Client user is not defined');
+		}
+
 		await this.initCommands();
 
-		this.handler = await InteractionHandler.create(this);
+		this.handler = new InteractionHandler(this);
 		console.log(`Logged in as ${this.client.user.tag}!`);
 		return this;
 	}

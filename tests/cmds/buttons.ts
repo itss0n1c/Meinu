@@ -15,7 +15,8 @@ export default new Command({
 					new ActionRowBuilder<ButtonBuilder>().addComponents(
 						new ButtonBuilder().setLabel('Test').setCustomId('button1').setStyle(ButtonStyle.Primary)
 					)
-				]
+				],
+				ephemeral: true
 			})
 		),
 	new Command({

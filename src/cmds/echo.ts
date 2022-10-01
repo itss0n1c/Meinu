@@ -13,6 +13,6 @@ export default new Command({
 		}
 	]
 }).addHandler('chatInput', (bot, int) => {
-	const string = int.options.getString('string');
+	const string = int.options.getString('string', true);
 	return int.reply(string);
 });

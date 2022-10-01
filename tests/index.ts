@@ -12,12 +12,12 @@ import user from './cmds/user.js';
 
 class TestBot extends Meinu {
 	static async create(): Promise<TestBot> {
-		const inst = new TestBot();
-		await inst.create({
+		const inst = new TestBot({
 			owners: [ '211160171945263105' ],
 			guildCommands: [ evalc, echo, help, cm, ac, profile, user, sub, modal, buttons, locale_test ],
 			specificGuildId: '744006904958812210'
 		});
+		await inst.init();
 		return inst;
 	}
 }

@@ -1,29 +1,39 @@
 {
 	"name": "meinu",
-	"version": "5.1.2",
+	"version": "5.2.0",
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"license": "MIT",
 	"author": "S0n1c",
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"dev": "nodemon --exec vite-node ./tests/index.ts",
 		"build": "tsc -p ."
 	},
 	"devDependencies": {
-		"@types/node": "^18.7.18",
-		"@typescript-eslint/eslint-plugin": "^5.38.0",
-		"@typescript-eslint/parser": "^5.38.0",
-		"eslint": "^8.23.1",
+		"@types/node": "^18.7.23",
+		"@typescript-eslint/eslint-plugin": "^5.38.1",
+		"@typescript-eslint/parser": "^5.38.1",
+		"eslint": "^8.24.0",
 		"nodemon": "^2.0.20",
-		"typescript": "4.8.3",
+		"typescript": "4.8.4",
 		"vite-node": "^0.23.4"
 	},
 	"dependencies": {
-		"discord.js": "^14.4.0",
-		"dotenv": "^16.0.2"
+		"discord.js": "^14.5.0",
+		"dotenv": "^16.0.3"
 	},
 	"description": "Yet another Discord.JS framework that, this time, focuses on the new Interactions API.",
-	"repository": "git@github.com:itss0n1c/meinu.git",
-	"packageManager": "yarn@3.2.1"
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/itss0n1c/meinu.git"
+	},
+	"packageManager": "yarn@3.2.1",
+	"bugs": {
+		"url": "https://github.com/itss0n1c/meinu/issues"
+	},
+	"homepage": "https://github.com/itss0n1c/meinu#readme"
 }

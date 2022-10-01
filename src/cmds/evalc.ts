@@ -15,14 +15,14 @@ export default new Command({
 	],
 	ownersOnly: true
 }).addHandler('chatInput', async (bot, int) => {
-	const script = int.options.getString('script');
+	const script = int.options.getString('script', true);
 
 	let run: string;
 	try {
 		run = await Object.getPrototypeOf(async () => '').constructor('bot', 'int', `return ${script}`)(bot, int);
 	} catch (e) {
 		console.error(e);
-		run = e;
+		run = e as string;
 	}
 
 	return int.reply({
