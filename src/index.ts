@@ -161,7 +161,7 @@ class Meinu {
 			throw 'Token not defined.';
 		}
 
-		await this.client.login(process.env.TOKEN ?? _token);
+		await this.client.login(_token ?? process.env.TOKEN);
 
 		await new Promise((res) => this.client.once('ready', res));
 
