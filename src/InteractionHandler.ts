@@ -71,29 +71,28 @@ export class InteractionHandler {
 		}
 		if (int.isSelectMenu() || int.isButton()) {
 			const msg_int = int.message.interaction;
-			if (!msg_int) {
-				throw new Error('Message interaction not found.');
-			}
-			if (msg_int.type === InteractionType.ApplicationCommand) {
-				let maincmd = this.inst.findCommand(msg_int.commandName);
-				console.log(msg_int);
+			if (msg_int) {
+				if (msg_int.type === InteractionType.ApplicationCommand) {
+					let maincmd = this.inst.findCommand(msg_int.commandName);
+					console.log(msg_int);
 
-				if (!maincmd) {
-					const [ parent, ...sub ] = msg_int.commandName.split(' ');
-					console.log(parent, sub, msg_int);
-					maincmd = this.inst.findCommand(parent);
 					if (!maincmd) {
-						throw new Error('Command not found.');
-					}
-					cmds.push(maincmd);
-					if (sub.length > 0) {
-						const cmd = maincmd.subcommands.find((c) => c.name.get('default') === sub[0]);
-						if (cmd) {
-							cmds.push(cmd);
+						const [ parent, ...sub ] = msg_int.commandName.split(' ');
+						console.log(parent, sub, msg_int);
+						maincmd = this.inst.findCommand(parent);
+						if (!maincmd) {
+							throw new Error('Command not found.');
 						}
+						cmds.push(maincmd);
+						if (sub.length > 0) {
+							const cmd = maincmd.subcommands.find((c) => c.name.get('default') === sub[0]);
+							if (cmd) {
+								cmds.push(cmd);
+							}
+						}
+					} else {
+						cmds.push(maincmd);
 					}
-				} else {
-					cmds.push(maincmd);
 				}
 			}
 		}
