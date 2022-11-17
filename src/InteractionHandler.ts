@@ -94,6 +94,22 @@ export class InteractionHandler {
 						cmds.push(maincmd);
 					}
 				}
+			} else {
+				const [ cmdname, ...rest ] = int.customId.split('-');
+
+				const cmd = this.inst.findCommand(cmdname);
+				if (!cmd) {
+					throw new Error('Command not found.');
+				}
+				cmds.push(cmd);
+				if (rest.length > 0) {
+					const [ subname, id ] = rest;
+					console.log(subname, id);
+					const subcmd = cmd.subcommands.find((c) => c.name.get('default') === subname);
+					if (subcmd) {
+						cmds.push(subcmd);
+					}
+				}
 			}
 		}
 
