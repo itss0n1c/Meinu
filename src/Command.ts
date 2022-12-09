@@ -203,7 +203,7 @@ export class Command<Inst = Meinu> {
 	}
 
 	addHandler<T extends keyof CommandInteractionHandlers<Inst>>(type: T, handler: CommandInteractionHandlers<Inst>[T]): this {
-		this.handlers[type] = handler as any;
+		this.handlers[type] = handler;
 		return this;
 	}
 
@@ -214,7 +214,7 @@ export class Command<Inst = Meinu> {
 
 	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<InteractionResponse | void> {
 		if (this.handlers[type]) {
-			const handler = this.handlers[type] as Required<CommandInteractionHandlers<Inst>>[Type];
+			const handler = this.handlers[type] as CommandInteractionHandlers<Inst>[Type];
 			return handler(bot, int as any);
 		}
 	}
