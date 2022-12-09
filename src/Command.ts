@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import {
+	AnySelectMenuInteraction,
 	ApplicationCommandOptionData,
 	ApplicationCommandOptionType,
 	ApplicationCommandSubCommandData,
@@ -11,20 +12,21 @@ import {
 	InteractionResponse,
 	MessageContextMenuCommandInteraction,
 	ModalSubmitInteraction,
-	SelectMenuInteraction,
 	UserContextMenuCommandInteraction
 } from 'discord.js';
 import { Meinu } from './index.js';
 import { Locales, PartialLocales, setLocales } from './Locales.js';
 
+type CommandResponse = Promise<InteractionResponse | void>;
+
 export interface CommandInteractionHandlers<Inst> {
-	chatInput: (bot: Inst, int: ChatInputCommandInteraction) => Promise<InteractionResponse | void>;
-	button: (bot: Inst, int: ButtonInteraction) => Promise<InteractionResponse | void>;
-	modalSubmit: (bot: Inst, int: ModalSubmitInteraction) => Promise<InteractionResponse | void>;
-	selectMenu: (bot: Inst, int: SelectMenuInteraction) => Promise<InteractionResponse | void>;
-	userContextMenu: (bot: Inst, int: UserContextMenuCommandInteraction) => Promise<InteractionResponse | void>;
-	messageContextMenu: (bot: Inst, int: MessageContextMenuCommandInteraction) => Promise<InteractionResponse | void>;
-	autocomplete: (bot: Inst, int: AutocompleteInteraction) => Promise<InteractionResponse | void>;
+	chatInput: (bot: Inst, int: ChatInputCommandInteraction) => CommandResponse;
+	button: (bot: Inst, int: ButtonInteraction) => CommandResponse;
+	modalSubmit: (bot: Inst, int: ModalSubmitInteraction) => CommandResponse;
+	selectMenu: (bot: Inst, int: AnySelectMenuInteraction) => CommandResponse;
+	userContextMenu: (bot: Inst, int: UserContextMenuCommandInteraction) => CommandResponse;
+	messageContextMenu: (bot: Inst, int: MessageContextMenuCommandInteraction) => CommandResponse;
+	autocomplete: (bot: Inst, int: AutocompleteInteraction) => CommandResponse;
 }
 
 type handler<Inst, T extends keyof CommandInteractionHandlers<Inst>> = Partial<{
