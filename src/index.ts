@@ -98,7 +98,9 @@ class Meinu {
 		if (!this.client.application) {
 			throw new Error('Client application is not defined');
 		}
-		await this.client.application.commands.fetch();
+		await this.client.application.commands.fetch({
+			withLocalizations: true
+		});
 		const globalCmds = this.client.application.commands;
 
 		for (const cmd of globalCmds.cache.values()) {
@@ -129,7 +131,9 @@ class Meinu {
 	}
 
 	private async registerGuildCommands(guild: Guild): Promise<void> {
-		await guild.commands.fetch();
+		await guild.commands.fetch({
+			withLocalizations: true
+		});
 
 		for (const cmd of guild.commands.cache.values()) {
 			if (!this.guildCommands.has(cmd.name)) {
