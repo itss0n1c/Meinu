@@ -101,15 +101,14 @@ class ScrollEmbed<Data extends ScrollDataType> {
 			components.push(row);
 		}
 
-		const msg = await int.reply({
+		const scroll_embed = await int.reply({
 			embeds: [ this.embeds[0] ],
-			components,
-			fetchReply: true
+			components
 		});
 
 		const filter = (i: MessageComponentInteraction) =>
 			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || buttons.some((b) => b.id === i.customId);
-		const collector = msg.createMessageComponentCollector({ filter });
+		const collector = scroll_embed.createMessageComponentCollector({ filter });
 		let index = 0;
 		collector.on('collect', async (bint) => {
 			if (bint.isButton()) {
@@ -123,7 +122,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							index--;
 							components[0].components[0].setDisabled(index === 0);
 							components[0].components[1].setDisabled(index === this.embeds.length - 1);
-							await msg.edit({
+							await int.editReply({
 								embeds: [ this.embeds[index] ],
 								components
 							});
@@ -135,7 +134,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							index++;
 							components[0].components[0].setDisabled(index === 0);
 							components[0].components[1].setDisabled(index === this.embeds.length - 1);
-							await msg.edit({
+							await int.editReply({
 								embeds: [ this.embeds[index] ],
 								components
 							});
