@@ -1,7 +1,6 @@
 import { Client, Collection, ColorResolvable, GatewayIntentBits, Guild } from 'discord.js';
 import { config } from 'dotenv';
-import { Command } from './Command.js';
-import { InteractionHandler } from './InteractionHandler.js';
+import { Command, InteractionHandler } from './utils/index.js';
 
 export interface MeinuOptions {
 	color: ColorResolvable;
@@ -183,5 +182,5 @@ class Meinu {
 
 export * from 'discord.js';
 export * from './cmds/index.js';
-export * from './Locales.js';
-export { Meinu, Command };
+export * from './utils/index.js';
+export { Meinu };

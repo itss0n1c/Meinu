@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { inspect } from 'util';
-import { Command } from '../Command.js';
+import { Command } from '../utils/index.js';
 
 export default new Command({
 	name: 'eval',

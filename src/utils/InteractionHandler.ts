@@ -1,7 +1,6 @@
 import { Interaction, InteractionResponse, InteractionType } from 'discord.js';
+import { Meinu } from '../index.js';
 import { Command, CommandInteractionHandlers } from './Command.js';
-
-import { Meinu } from './index.js';
 
 export class InteractionHandler {
 	inst: Meinu;

@@ -1,4 +1,4 @@
-import { Command } from '../Command.js';
+import { Command } from '../utils/index.js';
 
 export default new Command({
 	name: 'help',

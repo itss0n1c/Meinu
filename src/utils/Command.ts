@@ -14,7 +14,7 @@ import {
 	ModalSubmitInteraction,
 	UserContextMenuCommandInteraction
 } from 'discord.js';
-import { Meinu } from './index.js';
+import { Meinu } from '../index.js';
 import { Locales, PartialLocales, setLocales } from './Locales.js';
 
 type CommandResponse = Promise<InteractionResponse | void>;
