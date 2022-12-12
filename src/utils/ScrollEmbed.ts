@@ -12,10 +12,10 @@ import {
 
 type ScrollDataType = Array<Record<string, any>>;
 
-interface ExtraButtonBase {
+interface ExtraButtonBase<Data extends ScrollDataType> {
 	id: string;
 	// eslint-disable-next-line no-unused-vars
-	action: (int: ButtonInteraction) => void | Promise<InteractionResponse | void>;
+	action: (int: ButtonInteraction, current_val: Data[0]) => void | Promise<InteractionResponse | void>;
 	style: ButtonStyle;
 }
 
@@ -32,14 +32,14 @@ interface ExtraButtonLink extends ExtraButtonLabel, ExtraButtonEmoji {
 	style: ButtonStyle.Link;
 }
 
-type ExtraButton = ExtraButtonBase & (ExtraButtonLink | ExtraButtonLabel | ExtraButtonEmoji);
+type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraButtonLink | ExtraButtonLabel | ExtraButtonEmoji);
 
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: BaseInteraction;
 	data: Data;
 	// eslint-disable-next-line no-unused-vars
 	match: (val: Data[number]) => Omit<APIEmbed, 'footer' | 'type'>;
-	buttons?: ExtraButton[];
+	buttons?: ExtraButton<Data>[];
 }
 
 class ScrollEmbed<Data extends ScrollDataType> {
@@ -119,7 +119,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 			if (bint.isButton()) {
 				const find = buttons.find((b) => b.id === bint.customId);
 				if (find) {
-					await find.action(bint);
+					await find.action(bint, this.data.data[index]);
 				}
 				switch (bint.customId) {
 					case 'scroll_embed_prev':
