@@ -62,9 +62,6 @@ class ScrollEmbed<Data extends ScrollDataType> {
 		if (!int.isRepliable()) {
 			throw new Error('Interaction is not repliable.');
 		}
-		if (int.replied) {
-			throw new Error('Interaction has already been replied to.');
-		}
 
 		const components: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -101,10 +98,18 @@ class ScrollEmbed<Data extends ScrollDataType> {
 			components.push(row);
 		}
 
-		const scroll_embed = await int.reply({
-			embeds: [ this.embeds[0] ],
-			components
-		});
+		let scroll_embed;
+		if (int.deferred || int.replied) {
+			scroll_embed = await int.editReply({
+				embeds: [ this.embeds[0] ],
+				components
+			});
+		} else {
+			scroll_embed = await int.reply({
+				embeds: [ this.embeds[0] ],
+				components
+			});
+		}
 
 		const filter = (i: MessageComponentInteraction) =>
 			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || buttons.some((b) => b.id === i.customId);

@@ -3,6 +3,7 @@ export default new Command({
 	name: 'scroll_embed',
 	description: 'Scroll Embed'
 }).addHandler('chatInput', async (bot, int) => {
+	await int.deferReply();
 	const data = [
 		{
 			title: 'Page 1',
