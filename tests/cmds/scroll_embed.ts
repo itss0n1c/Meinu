@@ -33,7 +33,7 @@ export default new Command({
 
 	await create_scroll_embed({
 		int,
-		data,
+		data: () => data,
 		match: (val) => ({
 			title: val.title,
 			description: val.description,

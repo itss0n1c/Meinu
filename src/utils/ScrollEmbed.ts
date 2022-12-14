@@ -12,6 +12,8 @@ import {
 
 type ScrollDataType = Array<Record<string, any>>;
 
+type ScrollDataFn<Data extends ScrollDataType> = () => Data | Promise<Data>;
+
 interface ExtraButtonBase<Data extends ScrollDataType> {
 	id: string;
 	// eslint-disable-next-line no-unused-vars
@@ -36,7 +38,7 @@ type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraBu
 
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: BaseInteraction;
-	data: Data;
+	data: ScrollDataFn<Data>;
 	// eslint-disable-next-line no-unused-vars
 	match: (val: Data[number]) => Omit<APIEmbed, 'footer' | 'type'>;
 	buttons?: ExtraButton<Data>[];
@@ -44,17 +46,36 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 
 class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
+	embed_data: Data;
 	embeds: Array<EmbedBuilder>;
-	constructor(data: ScrollEmbedData<Data>) {
+	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
 			...data,
 			buttons: data.buttons ?? []
 		};
-		this.embeds = data.data.map(data.match).map((e, i) =>
+		this.embed_data = res;
+		this.embeds = res.map(data.match).map((e, i) =>
 			new EmbedBuilder(e).setFooter({
-				text: `${i + 1}/${data.data.length}`
+				text: `${i + 1}/${res.length}`
 			})
 		);
+	}
+
+	async reload_data(): Promise<Data> {
+		this.embed_data = await this.data.data();
+		this.embeds = this.embed_data.map(this.data.match).map((e, i) =>
+			new EmbedBuilder(e).setFooter({
+				text: `${i + 1}/${this.embed_data.length}`
+			})
+		);
+		return this.embed_data;
+	}
+
+	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<ScrollEmbed<Data>> {
+		const res = await data.data();
+		const inst = new ScrollEmbed(data, res);
+
+		return inst;
 	}
 
 	async init(): Promise<this> {
@@ -67,7 +88,8 @@ class ScrollEmbed<Data extends ScrollDataType> {
 
 		const btns: ButtonBuilder[] = [
 			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(true),
-			new ButtonBuilder().setCustomId('scroll_embed_next').setLabel('→').setStyle(ButtonStyle.Secondary)
+			new ButtonBuilder().setCustomId('scroll_embed_next').setLabel('→').setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder().setCustomId('scroll_embed_reload').setLabel('↻').setStyle(ButtonStyle.Secondary)
 		];
 		for (const btn of buttons) {
 			if (btn) {
@@ -112,14 +134,17 @@ class ScrollEmbed<Data extends ScrollDataType> {
 		}
 
 		const filter = (i: MessageComponentInteraction) =>
-			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || buttons.some((b) => b.id === i.customId);
+			i.customId === 'scroll_embed_prev' ||
+			i.customId === 'scroll_embed_next' ||
+			i.customId === 'scroll_embed_reload' ||
+			buttons.some((b) => b.id === i.customId);
 		const collector = scroll_embed.createMessageComponentCollector({ filter });
 		let index = 0;
 		collector.on('collect', async (bint) => {
 			if (bint.isButton()) {
 				const find = buttons.find((b) => b.id === bint.customId);
 				if (find) {
-					await find.action(bint, this.data.data[index]);
+					await find.action(bint, this.embed_data[index]);
 				}
 				switch (bint.customId) {
 					case 'scroll_embed_prev':
@@ -146,6 +171,16 @@ class ScrollEmbed<Data extends ScrollDataType> {
 						}
 						await bint.deferUpdate();
 						break;
+					case 'scroll_embed_reload':
+						await this.reload_data();
+						index = 0;
+						components[0].components[0].setDisabled(index === 0);
+						components[0].components[1].setDisabled(index === this.embeds.length - 1);
+						await int.editReply({
+							embeds: [ this.embeds[index] ],
+							components
+						});
+						await bint.deferUpdate();
 				}
 			}
 		});
@@ -155,6 +190,6 @@ class ScrollEmbed<Data extends ScrollDataType> {
 }
 
 export async function create_scroll_embed<Data extends ScrollDataType>(data: ScrollEmbedData<Data>) {
-	const scroll = new ScrollEmbed(data);
+	const scroll = await ScrollEmbed.init(data);
 	await scroll.init();
 }
