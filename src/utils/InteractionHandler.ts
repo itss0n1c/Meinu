@@ -1,4 +1,11 @@
-import { Interaction, InteractionResponse, InteractionType } from 'discord.js';
+import {
+	ApplicationCommandOptionType,
+	ApplicationCommandSubCommandData,
+	ApplicationCommandSubGroupData,
+	Interaction,
+	InteractionResponse,
+	InteractionType
+} from 'discord.js';
 import { Meinu } from '../index.js';
 import { Command, CommandInteractionHandlers } from './Command.js';
 
@@ -89,11 +96,42 @@ export class InteractionHandler {
 							throw new Error('Command not found.');
 						}
 						cmds.push(maincmd);
+
 						if (sub.length > 0) {
-							const cmd = maincmd.subcommands.find((c) => c.name.get('default') === sub[0]);
-							if (cmd) {
-								cmds.push(cmd);
+							const subs = maincmd.options.filter(
+								(o) => o.type === ApplicationCommandOptionType.SubcommandGroup || o.type === ApplicationCommandOptionType.Subcommand
+							) as Array<ApplicationCommandSubCommandData | ApplicationCommandSubGroupData>;
+							// circulate through subcommands
+							const circular_sub = (maincmd: Command) => {
+								let found: Command | undefined;
+								for (const s of subs) {
+									if (s.name === sub[0]) {
+										if (s.type === ApplicationCommandOptionType.SubcommandGroup) {
+											const find = s.options?.find((o) => o.name === sub[1]);
+											if (find) {
+												const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === find.name);
+												if (subcmd) {
+													cmds.push(subcmd);
+													found = subcmd;
+												}
+											}
+										} else {
+											const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === s.name);
+											if (subcmd) {
+												cmds.push(subcmd);
+												found = subcmd;
+											}
+										}
+									}
+								}
+								return found;
+							};
+
+							const found = circular_sub(maincmd);
+							if (!found) {
+								throw new Error('Command not found.');
 							}
+							cmds.push(found);
 						}
 					} else {
 						cmds.push(maincmd);
