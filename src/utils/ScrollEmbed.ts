@@ -47,7 +47,7 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	// eslint-disable-next-line no-unused-vars
 	match: (val: Data[number], index: number, array: Data[number][]) => Omit<APIEmbed, 'footer' | 'type'>;
 	// eslint-disable-next-line no-unused-vars
-	match_embed?: (index: number) => MatchedEmbed;
+	match_embed?: (val: Data[number], index: number) => MatchedEmbed;
 	buttons?: ExtraButton<Data>[];
 }
 
@@ -55,6 +55,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
 	embed_data: Data;
 	embeds: Array<EmbedBuilder>;
+	embed_datas: Array<MatchedEmbed>;
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
 			...data,
@@ -67,6 +68,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 				text: `${i + 1}/${res.length}`
 			})
 		);
+		this.embed_datas = res.map(this.data.match_embed);
 	}
 
 	async reload_data(): Promise<Data> {
@@ -76,6 +78,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 				text: `${i + 1}/${this.embed_data.length}`
 			})
 		);
+		this.embed_datas = this.embed_data.map(this.data.match_embed);
 		return this.embed_data;
 	}
 
@@ -133,13 +136,13 @@ class ScrollEmbed<Data extends ScrollDataType> {
 			scroll_embed = await int.editReply({
 				embeds: [ this.embeds[0] ],
 				components,
-				files: this.data.match_embed(0).files
+				files: this.embed_datas[0].files
 			});
 		} else {
 			scroll_embed = await int.reply({
 				embeds: [ this.embeds[0] ],
 				components,
-				files: this.data.match_embed(0).files
+				files: this.embed_datas[0].files
 			});
 		}
 
@@ -165,7 +168,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							await int.editReply({
 								embeds: [ this.embeds[index] ],
 								components,
-								files: this.data.match_embed(index).files
+								files: this.embed_datas[index].files
 							});
 						}
 						await bint.deferUpdate();
@@ -178,7 +181,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							await int.editReply({
 								embeds: [ this.embeds[index] ],
 								components,
-								files: this.data.match_embed(index).files
+								files: this.embed_datas[index].files
 							});
 						}
 						await bint.deferUpdate();
@@ -191,7 +194,7 @@ class ScrollEmbed<Data extends ScrollDataType> {
 						await int.editReply({
 							embeds: [ this.embeds[index] ],
 							components,
-							files: this.data.match_embed(index).files
+							files: this.embed_datas[index].files
 						});
 						await bint.deferUpdate();
 				}
