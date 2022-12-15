@@ -7,25 +7,25 @@ export default new Command({
 	const data = [
 		{
 			title: 'Page 1',
-			description: 'This is page 1',
+			description: 'This is page {page}',
 			author: 'Author 1',
 			date: new Date()
 		},
 		{
 			title: 'Page 2',
-			description: 'This is page 2',
+			description: 'This is page {page}',
 			author: 'Author 2',
 			date: new Date(2021, 1, 1)
 		},
 		{
 			title: 'Page 3',
-			description: 'This is page 3',
+			description: 'This is page {page}',
 			author: 'Author 3',
 			date: new Date(2021, 2, 1)
 		},
 		{
 			title: 'Page 4',
-			description: 'This is page 4',
+			description: 'This is page {page}',
 			author: 'Author 4',
 			date: new Date(2021, 3, 1)
 		}
@@ -34,9 +34,9 @@ export default new Command({
 	await create_scroll_embed({
 		int,
 		data: () => data,
-		match: (val) => ({
+		match: (val, index) => ({
 			title: val.title,
-			description: val.description,
+			description: val.description.replace('{page}', `${index + 1}`),
 			author: {
 				name: val.author
 			},

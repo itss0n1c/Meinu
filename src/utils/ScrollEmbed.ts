@@ -2,6 +2,7 @@ import { EmbedBuilder } from '@discordjs/builders';
 import {
 	ActionRowBuilder,
 	APIEmbed,
+	AttachmentBuilder,
 	BaseInteraction,
 	ButtonBuilder,
 	ButtonInteraction,
@@ -34,13 +35,19 @@ interface ExtraButtonLink extends ExtraButtonLabel, ExtraButtonEmoji {
 	style: ButtonStyle.Link;
 }
 
+interface MatchedEmbed {
+	files?: AttachmentBuilder[];
+}
+
 type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraButtonLink | ExtraButtonLabel | ExtraButtonEmoji);
 
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: BaseInteraction;
 	data: ScrollDataFn<Data>;
 	// eslint-disable-next-line no-unused-vars
-	match: (val: Data[number]) => Omit<APIEmbed, 'footer' | 'type'>;
+	match: (val: Data[number], index: number, array: Data[number][]) => Omit<APIEmbed, 'footer' | 'type'>;
+	// eslint-disable-next-line no-unused-vars
+	match_embed?: (index: number) => MatchedEmbed;
 	buttons?: ExtraButton<Data>[];
 }
 
@@ -51,7 +58,8 @@ class ScrollEmbed<Data extends ScrollDataType> {
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
 			...data,
-			buttons: data.buttons ?? []
+			buttons: data.buttons ?? [],
+			match_embed: data.match_embed ?? (() => ({}))
 		};
 		this.embed_data = res;
 		this.embeds = res.map(data.match).map((e, i) =>
@@ -124,12 +132,14 @@ class ScrollEmbed<Data extends ScrollDataType> {
 		if (int.deferred || int.replied) {
 			scroll_embed = await int.editReply({
 				embeds: [ this.embeds[0] ],
-				components
+				components,
+				files: this.data.match_embed(0).files
 			});
 		} else {
 			scroll_embed = await int.reply({
 				embeds: [ this.embeds[0] ],
-				components
+				components,
+				files: this.data.match_embed(0).files
 			});
 		}
 
@@ -154,7 +164,8 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							components[0].components[1].setDisabled(index === this.embeds.length - 1);
 							await int.editReply({
 								embeds: [ this.embeds[index] ],
-								components
+								components,
+								files: this.data.match_embed(index).files
 							});
 						}
 						await bint.deferUpdate();
@@ -166,7 +177,8 @@ class ScrollEmbed<Data extends ScrollDataType> {
 							components[0].components[1].setDisabled(index === this.embeds.length - 1);
 							await int.editReply({
 								embeds: [ this.embeds[index] ],
-								components
+								components,
+								files: this.data.match_embed(index).files
 							});
 						}
 						await bint.deferUpdate();
@@ -178,7 +190,8 @@ class ScrollEmbed<Data extends ScrollDataType> {
 						components[0].components[1].setDisabled(index === this.embeds.length - 1);
 						await int.editReply({
 							embeds: [ this.embeds[index] ],
-							components
+							components,
+							files: this.data.match_embed(index).files
 						});
 						await bint.deferUpdate();
 				}
