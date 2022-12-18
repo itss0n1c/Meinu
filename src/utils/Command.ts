@@ -10,6 +10,7 @@ import {
 	ChatInputCommandInteraction,
 	Interaction,
 	InteractionResponse,
+	Message,
 	MessageContextMenuCommandInteraction,
 	ModalSubmitInteraction,
 	UserContextMenuCommandInteraction
@@ -17,7 +18,7 @@ import {
 import { Meinu } from '../index.js';
 import { Locales, PartialLocales, setLocales } from './Locales.js';
 
-type CommandResponse = Promise<InteractionResponse | void>;
+type CommandResponse = void | Promise<InteractionResponse | void | Message>;
 
 export interface CommandInteractionHandlers<Inst> {
 	chatInput: (bot: Inst, int: ChatInputCommandInteraction) => CommandResponse;
@@ -212,7 +213,7 @@ export class Command<Inst = Meinu> {
 		return this;
 	}
 
-	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<InteractionResponse | void> {
+	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<Message | InteractionResponse | void> {
 		if (this.handlers[type]) {
 			const handler = this.handlers[type] as CommandInteractionHandlers<Inst>[Type];
 			return handler(bot, int as any);

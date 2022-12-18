@@ -4,7 +4,8 @@ import {
 	ApplicationCommandSubGroupData,
 	Interaction,
 	InteractionResponse,
-	InteractionType
+	InteractionType,
+	Message
 } from 'discord.js';
 import { Meinu } from '../index.js';
 import { Command, CommandInteractionHandlers } from './Command.js';
@@ -204,7 +205,7 @@ export class InteractionHandler {
 		return true;
 	}
 
-	async handleInteraction(type: keyof CommandInteractionHandlers<Meinu>, int: Interaction): Promise<InteractionResponse | void> {
+	async handleInteraction(type: keyof CommandInteractionHandlers<Meinu>, int: Interaction): Promise<Message | InteractionResponse | void> {
 		const cmds = this.resolveCommand(int);
 		if (cmds.length > 0) {
 			const maincmd = cmds[0];
