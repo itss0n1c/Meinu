@@ -1,4 +1,4 @@
-import { Client, Collection, ColorResolvable, GatewayIntentBits, Guild } from 'discord.js';
+import { Client, Collection, ColorResolvable, GatewayIntentBits, Guild, Partials } from 'discord.js';
 import { config } from 'dotenv';
 import { Command, InteractionHandler } from './utils/index.js';
 
@@ -39,24 +39,27 @@ class Meinu {
 		if (opts.fullIntents) {
 			this.client = new Client({
 				intents: [
-					GatewayIntentBits.DirectMessageReactions,
-					GatewayIntentBits.DirectMessageTyping,
-					GatewayIntentBits.DirectMessages,
+					GatewayIntentBits.Guilds,
+					GatewayIntentBits.GuildMembers,
 					GatewayIntentBits.GuildBans,
 					GatewayIntentBits.GuildEmojisAndStickers,
 					GatewayIntentBits.GuildIntegrations,
+					GatewayIntentBits.GuildWebhooks,
 					GatewayIntentBits.GuildInvites,
-					GatewayIntentBits.GuildMembers,
+					GatewayIntentBits.GuildVoiceStates,
+					GatewayIntentBits.GuildPresences,
+					GatewayIntentBits.GuildMessages,
 					GatewayIntentBits.GuildMessageReactions,
 					GatewayIntentBits.GuildMessageTyping,
-					GatewayIntentBits.GuildMessages,
-					GatewayIntentBits.GuildPresences,
+					GatewayIntentBits.DirectMessages,
+					GatewayIntentBits.DirectMessageReactions,
+					GatewayIntentBits.DirectMessageTyping,
+					GatewayIntentBits.MessageContent,
 					GatewayIntentBits.GuildScheduledEvents,
-					GatewayIntentBits.GuildVoiceStates,
-					GatewayIntentBits.GuildWebhooks,
-					GatewayIntentBits.Guilds,
-					GatewayIntentBits.MessageContent
-				]
+					GatewayIntentBits.AutoModerationConfiguration,
+					GatewayIntentBits.AutoModerationExecution
+				],
+				partials: [ Partials.Channel ]
 			});
 		} else {
 			this.client = new Client({ intents: [ GatewayIntentBits.Guilds ] });
