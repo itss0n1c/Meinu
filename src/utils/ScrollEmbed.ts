@@ -51,7 +51,7 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	buttons?: ExtraButton<Data>[];
 }
 
-class ScrollEmbed<Data extends ScrollDataType> {
+export class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
 	embed_data: Data;
 	embeds: Array<EmbedBuilder>;
@@ -207,5 +207,5 @@ class ScrollEmbed<Data extends ScrollDataType> {
 
 export async function create_scroll_embed<Data extends ScrollDataType>(data: ScrollEmbedData<Data>) {
 	const scroll = await ScrollEmbed.init(data);
-	await scroll.init();
+	return scroll.init();
 }
