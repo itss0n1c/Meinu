@@ -82,7 +82,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.embed_datas = res.map(this.data.match_embed);
 	}
 
-	async reload_data(bint?: ButtonInteraction): Promise<void> {
+	async reload_data({ data, bint }: { data?: ScrollDataFn<Data>; bint?: ButtonInteraction } = {}): Promise<void> {
+		if (data) {
+			this.data.data = data;
+		}
 		this.embed_data = await this.data.data();
 		this.embeds = this.embed_data.map(this.data.match).map((e, i) =>
 			new EmbedBuilder(e).setFooter({
@@ -190,7 +193,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 						await this.scroll_embed_move('next', bint);
 						break;
 					case 'scroll_embed_reload':
-						await this.reload_data(bint);
+						await this.reload_data({ bint });
 						break;
 				}
 			}
