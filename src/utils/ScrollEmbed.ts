@@ -8,7 +8,10 @@ import {
 	ButtonInteraction,
 	ButtonStyle,
 	InteractionResponse,
-	MessageComponentInteraction
+	MessageComponentInteraction,
+	RoleSelectMenuBuilder,
+	StringSelectMenuBuilder,
+	UserSelectMenuBuilder
 } from 'discord.js';
 
 type ScrollDataType = Array<Record<string, any>>;
@@ -41,6 +44,8 @@ interface MatchedEmbed {
 
 type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraButtonLink | ExtraButtonLabel | ExtraButtonEmoji);
 
+type AnySelectMenuBuilder = StringSelectMenuBuilder | RoleSelectMenuBuilder | UserSelectMenuBuilder;
+
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: BaseInteraction;
 	data: ScrollDataFn<Data>;
@@ -49,6 +54,7 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	// eslint-disable-next-line no-unused-vars
 	match_embed?: (val: Data[number], index: number) => MatchedEmbed;
 	buttons?: ExtraButton<Data>[];
+	extra_row?: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>;
 }
 
 export class ScrollEmbed<Data extends ScrollDataType> {
@@ -60,7 +66,8 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.data = {
 			...data,
 			buttons: data.buttons ?? [],
-			match_embed: data.match_embed ?? (() => ({}))
+			match_embed: data.match_embed ?? (() => ({})),
+			extra_row: data.extra_row ?? new ActionRowBuilder()
 		};
 		this.embed_data = res;
 		this.embeds = res.map(data.match).map((e, i) =>
@@ -95,7 +102,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			throw new Error('Interaction is not repliable.');
 		}
 
-		const components: ActionRowBuilder<ButtonBuilder>[] = [];
+		const components: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>[] = [];
 
 		const btns: ButtonBuilder[] = [
 			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(true),
@@ -129,6 +136,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		for (const chunk of chunks) {
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(chunk);
 			components.push(row);
+		}
+
+		if (this.data.extra_row && this.data.extra_row.components.length > 0) {
+			components.push(this.data.extra_row);
 		}
 
 		let scroll_embed;
