@@ -3,12 +3,12 @@ import {
 	ActionRowBuilder,
 	APIEmbed,
 	AttachmentBuilder,
-	BaseInteraction,
 	ButtonBuilder,
 	ButtonInteraction,
 	ButtonStyle,
 	InteractionResponse,
 	MessageComponentInteraction,
+	RepliableInteraction,
 	RoleSelectMenuBuilder,
 	StringSelectMenuBuilder,
 	UserSelectMenuBuilder
@@ -47,7 +47,7 @@ type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraBu
 type AnySelectMenuBuilder = StringSelectMenuBuilder | RoleSelectMenuBuilder | UserSelectMenuBuilder;
 
 interface ScrollEmbedData<Data extends ScrollDataType> {
-	int: BaseInteraction;
+	int: RepliableInteraction;
 	data: ScrollDataFn<Data>;
 	// eslint-disable-next-line no-unused-vars
 	match: (val: Data[number], index: number, array: Data[number][]) => Omit<APIEmbed, 'footer' | 'type'>;
@@ -62,6 +62,9 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	embed_data: Data;
 	embeds: Array<EmbedBuilder>;
 	embed_datas: Array<MatchedEmbed>;
+	int: RepliableInteraction;
+	index = 0;
+	components: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> = [];
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
 			...data,
@@ -69,6 +72,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			match_embed: data.match_embed ?? (() => ({})),
 			extra_row: data.extra_row ?? new ActionRowBuilder()
 		};
+		this.int = data.int;
 		this.embed_data = res;
 		this.embeds = res.map(data.match).map((e, i) =>
 			new EmbedBuilder(e).setFooter({
@@ -78,7 +82,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.embed_datas = res.map(this.data.match_embed);
 	}
 
-	async reload_data(): Promise<Data> {
+	async reload_data(bint?: ButtonInteraction): Promise<void> {
 		this.embed_data = await this.data.data();
 		this.embeds = this.embed_data.map(this.data.match).map((e, i) =>
 			new EmbedBuilder(e).setFooter({
@@ -86,7 +90,18 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			})
 		);
 		this.embed_datas = this.embed_data.map(this.data.match_embed);
-		return this.embed_data;
+
+		this.index = 0;
+		this.components[0].components[0].setDisabled(this.index === 0);
+		this.components[0].components[1].setDisabled(this.index === this.embeds.length - 1);
+		await this.int.editReply({
+			embeds: [ this.embeds[this.index] ],
+			components: this.components,
+			files: this.embed_datas[this.index].files
+		});
+		if (bint) {
+			await bint.deferUpdate();
+		}
 	}
 
 	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<ScrollEmbed<Data>> {
@@ -101,8 +116,6 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		if (!int.isRepliable()) {
 			throw new Error('Interaction is not repliable.');
 		}
-
-		const components: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>[] = [];
 
 		const btns: ButtonBuilder[] = [
 			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(true),
@@ -135,24 +148,24 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 		for (const chunk of chunks) {
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(chunk);
-			components.push(row);
+			this.components.push(row);
 		}
 
 		if (this.data.extra_row && this.data.extra_row.components.length > 0) {
-			components.push(this.data.extra_row);
+			this.components.push(this.data.extra_row);
 		}
 
 		let scroll_embed;
 		if (int.deferred || int.replied) {
 			scroll_embed = await int.editReply({
 				embeds: [ this.embeds[0] ],
-				components,
+				components: this.components,
 				files: this.embed_datas[0].files
 			});
 		} else {
 			scroll_embed = await int.reply({
 				embeds: [ this.embeds[0] ],
-				components,
+				components: this.components,
 				files: this.embed_datas[0].files
 			});
 		}
@@ -163,56 +176,54 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			i.customId === 'scroll_embed_reload' ||
 			buttons.some((b) => b.id === i.customId);
 		const collector = scroll_embed.createMessageComponentCollector({ filter });
-		let index = 0;
 		collector.on('collect', async (bint) => {
 			if (bint.isButton()) {
 				const find = buttons.find((b) => b.id === bint.customId);
 				if (find) {
-					await find.action(bint, this.embed_data[index]);
+					await find.action(bint, this.embed_data[this.index]);
 				}
 				switch (bint.customId) {
 					case 'scroll_embed_prev':
-						if (index > 0) {
-							index--;
-							components[0].components[0].setDisabled(index === 0);
-							components[0].components[1].setDisabled(index === this.embeds.length - 1);
-							await int.editReply({
-								embeds: [ this.embeds[index] ],
-								components,
-								files: this.embed_datas[index].files
-							});
-						}
-						await bint.deferUpdate();
+						await this.scroll_embed_move('prev', bint);
 						break;
 					case 'scroll_embed_next':
-						if (index < this.embeds.length - 1) {
-							index++;
-							components[0].components[0].setDisabled(index === 0);
-							components[0].components[1].setDisabled(index === this.embeds.length - 1);
-							await int.editReply({
-								embeds: [ this.embeds[index] ],
-								components,
-								files: this.embed_datas[index].files
-							});
-						}
-						await bint.deferUpdate();
+						await this.scroll_embed_move('next', bint);
 						break;
 					case 'scroll_embed_reload':
-						await this.reload_data();
-						index = 0;
-						components[0].components[0].setDisabled(index === 0);
-						components[0].components[1].setDisabled(index === this.embeds.length - 1);
-						await int.editReply({
-							embeds: [ this.embeds[index] ],
-							components,
-							files: this.embed_datas[index].files
-						});
-						await bint.deferUpdate();
+						await this.reload_data(bint);
+						break;
 				}
 			}
 		});
 
 		return this;
+	}
+
+	async scroll_embed_move(action: 'prev' | 'next', bint?: ButtonInteraction) {
+		switch (action) {
+			case 'prev':
+				if (this.index > 0) {
+					this.index--;
+				}
+				break;
+			case 'next':
+				if (this.index < this.embeds.length - 1) {
+					this.index++;
+				}
+				break;
+		}
+
+		this.components[0].components[0].setDisabled(this.index === 0);
+		this.components[0].components[1].setDisabled(this.index === this.embeds.length - 1);
+		await this.int.editReply({
+			embeds: [ this.embeds[this.index] ],
+			components: this.components,
+			files: this.embed_datas[this.index].files
+		});
+
+		if (bint) {
+			await bint.deferUpdate();
+		}
 	}
 }
 

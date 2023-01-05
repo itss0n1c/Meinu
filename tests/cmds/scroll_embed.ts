@@ -4,36 +4,20 @@ export default new Command({
 	description: 'Scroll Embed'
 }).addHandler('chatInput', async (bot, int) => {
 	await int.deferReply();
-	const data = [
-		{
-			title: 'Page 1',
-			description: 'This is page {page}',
-			author: 'Author 1',
-			date: new Date()
-		},
-		{
-			title: 'Page 2',
-			description: 'This is page {page}',
-			author: 'Author 2',
-			date: new Date(2021, 1, 1)
-		},
-		{
-			title: 'Page 3',
-			description: 'This is page {page}',
-			author: 'Author 3',
-			date: new Date(2021, 2, 1)
-		},
-		{
-			title: 'Page 4',
-			description: 'This is page {page}',
-			author: 'Author 4',
-			date: new Date(2021, 3, 1)
-		}
-	];
+
+	const make_data = (index: number) => ({
+		title: `Page ${index + 1}`,
+		description: 'This is page {page}',
+		author: `Author ${index + 1}`,
+		// random date using math random
+		date: new Date(2021, Math.floor(Math.random() * 12), Math.floor(Math.random() * 31))
+	});
+
+	const gen_data = () => Array.from({ length: 10 }, (_, i) => make_data(i));
 
 	await create_scroll_embed({
 		int,
-		data: () => data,
+		data: gen_data,
 		match: (val, index) => ({
 			title: val.title,
 			description: val.description.replace('{page}', `${index + 1}`),
