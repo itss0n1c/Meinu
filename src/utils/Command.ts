@@ -38,6 +38,7 @@ interface CommandInfoBasics {
 	name: string | Locales;
 	ownersOnly?: boolean;
 	dmPermission?: boolean;
+	nsfw?: boolean;
 }
 
 interface CommandInfoMessage extends CommandInfoBasics {
@@ -61,6 +62,7 @@ export type CommandInfoExport = CommandInfo & {
 	nameLocalizations: PartialLocales;
 	description: string;
 	descriptionLocalizations: PartialLocales;
+	nsfw: boolean;
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -83,8 +85,10 @@ export class Command<Inst = Meinu> {
 	private handlers: handler<Inst, keyof CommandInteractionHandlers<Inst>> = {};
 	permissionRes: HasPermission<Inst>;
 	ownersOnly: boolean;
+	global: boolean;
+	nsfw: boolean;
 
-	constructor(info: CommandInfo) {
+	constructor(info: CommandInfo & { global?: boolean }) {
 		this.name = info.name instanceof Locales ? info.name : setLocales({ default: info.name });
 		this.ownersOnly = info.ownersOnly ?? false;
 		info.type = info.type ?? ApplicationCommandType.ChatInput;
@@ -97,6 +101,8 @@ export class Command<Inst = Meinu> {
 			this.description = setLocales({ default: '' });
 		}
 		this.permissionRes = () => Promise.resolve(true);
+		this.global = info.global ?? false;
+		this.nsfw = info.nsfw ?? false;
 	}
 
 	addSubCommandGroup(group: SubCommandGroup<Command<Inst>>): this {
@@ -198,6 +204,10 @@ export class Command<Inst = Meinu> {
 			if (this.options.length > 0) {
 				res.options = this.options;
 			}
+		}
+
+		if (this.nsfw) {
+			res.nsfw = true;
 		}
 
 		return res as CommandInfoExport;
