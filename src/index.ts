@@ -108,10 +108,10 @@ class Meinu extends Client {
 		});
 	}
 
-	findCommand(cmd_name: string): Command<this> {
+	findCommand(cmd_name: string): Command<this> | null {
 		const cmd = this.commands.get(cmd_name);
 		if (!cmd) {
-			throw new Error(`Command ${cmd_name} not found`);
+			return null;
 		}
 		return cmd;
 	}
