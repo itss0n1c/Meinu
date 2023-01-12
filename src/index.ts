@@ -1,164 +1,119 @@
-import { Client, Collection, ColorResolvable, GatewayIntentBits, Guild, Partials } from 'discord.js';
+import {
+	ApplicationCommandManager,
+	Client,
+	ClientOptions,
+	Collection,
+	ColorResolvable,
+	GatewayIntentBits,
+	Guild,
+	GuildApplicationCommandManager
+} from 'discord.js';
 import { config } from 'dotenv';
 import { Command, InteractionHandler } from './utils/index.js';
 
 export interface MeinuOptions {
-	color: ColorResolvable;
 	name: string;
 	owners: string[];
-	guildCommands: Command[];
-	globalCommands: Command[];
-	specificGuildId: string;
-	fullIntents: boolean;
+	color: ColorResolvable;
+	clientOptions?: ClientOptions;
 }
 
-class Meinu {
+class Meinu extends Client {
 	name: string;
 	color: ColorResolvable;
-	client: Client;
-	guildCommands: Collection<string, Command>;
-	globalCommands: Collection<string, Command>;
-	specificGuildId: string | undefined;
 	owners: string[];
 	handler: InteractionHandler | undefined;
-	fullIntents: boolean;
+	commands: Collection<string, Command<this>>;
 
-	constructor(opts: Partial<MeinuOptions>) {
-		this.name = opts.name ?? 'Meinu';
-		this.color = opts.color ?? '#007aff';
-		this.owners = opts.owners ?? [];
-		if (opts.specificGuildId) {
-			this.specificGuildId = opts.specificGuildId;
-		}
-		this.fullIntents = opts.fullIntents ?? false;
-		opts.fullIntents = this.fullIntents;
-
-		this.guildCommands = new Collection<string, Command>((opts.guildCommands ?? []).map((cmd) => [ cmd.name.default, cmd ]));
-		this.globalCommands = new Collection<string, Command>((opts.globalCommands ?? []).map((cmd) => [ cmd.name.default, cmd ]));
-
-		if (opts.fullIntents) {
-			this.client = new Client({
-				intents: [
-					GatewayIntentBits.Guilds,
-					GatewayIntentBits.GuildMembers,
-					GatewayIntentBits.GuildBans,
-					GatewayIntentBits.GuildEmojisAndStickers,
-					GatewayIntentBits.GuildIntegrations,
-					GatewayIntentBits.GuildWebhooks,
-					GatewayIntentBits.GuildInvites,
-					GatewayIntentBits.GuildVoiceStates,
-					GatewayIntentBits.GuildPresences,
-					GatewayIntentBits.GuildMessages,
-					GatewayIntentBits.GuildMessageReactions,
-					GatewayIntentBits.GuildMessageTyping,
-					GatewayIntentBits.DirectMessages,
-					GatewayIntentBits.DirectMessageReactions,
-					GatewayIntentBits.DirectMessageTyping,
-					GatewayIntentBits.MessageContent,
-					GatewayIntentBits.GuildScheduledEvents,
-					GatewayIntentBits.AutoModerationConfiguration,
-					GatewayIntentBits.AutoModerationExecution
-				],
-				partials: [ Partials.Channel ]
-			});
+	constructor(opts: MeinuOptions) {
+		if (opts.clientOptions) {
+			super(opts.clientOptions);
 		} else {
-			this.client = new Client({ intents: [ GatewayIntentBits.Guilds ] });
+			super({
+				intents: [ GatewayIntentBits.Guilds ]
+			});
 		}
-
+		this.name = opts.name;
+		this.color = opts.color;
+		this.owners = opts.owners;
+		this.commands = new Collection<string, Command<this>>();
 		this.handler = undefined;
 	}
 
-	get guild(): Guild | undefined {
-		return this.client.guilds.cache.get(this.specificGuildId ?? '');
+	register_commands(cmds: Command<this>[]): this {
+		for (const cmd of cmds) {
+			this.commands.set(cmd.name.default, cmd);
+		}
+		return this;
 	}
 
-	findCommand(cmd: string): Command | null {
-		let command = this.globalCommands.get(cmd);
-		if (!command) {
-			command = this.guildCommands.get(cmd);
-			if (!command) {
-				return null;
-			}
-			return command;
+	private async init_commands(): Promise<void> {
+		if (!this.application) {
+			throw new Error('Application is not defined');
 		}
-		return command;
-	}
+		const local_global_commands = this.commands.filter((c) => c.global);
+		const local_guild_commands = this.commands.filter((c) => !c.global);
 
-	private async initCommands(): Promise<void> {
-		console.log('Loading global commands...');
-		await this.registerGlobalCommands();
-
-		console.log('Loading guild commands...');
-		if (this.specificGuildId) {
-			await this.registerGuildCommands(this.guild as Guild);
-		} else {
-			await this.registerAllGuildCommands();
-		}
-	}
-
-	private async registerGlobalCommands(): Promise<void> {
-		if (!this.client.application) {
-			throw new Error('Client application is not defined');
-		}
-		await this.client.application.commands.fetch({
-			withLocalizations: true
-		});
-		const globalCmds = this.client.application.commands;
-
-		for (const cmd of globalCmds.cache.values()) {
-			if (!this.globalCommands.has(cmd.name)) {
-				console.log(`Removing global command ${cmd.name}`);
+		const register_commands = async ({ manager, guild }: { manager: ApplicationCommandManager | GuildApplicationCommandManager; guild?: Guild }) => {
+			await manager.fetch({
+				withLocalizations: true
+			});
+			const type = guild ? 'guild' : 'global';
+			const all_cmds = {
+				global: local_global_commands,
+				guild: local_guild_commands
+			};
+			// eslint-disable-next-line no-unused-vars
+			for (const cmd of manager.cache.values()) {
+				const local_cmd = all_cmds[type].get(cmd.name);
+				if (local_cmd) {
+					continue;
+				}
+				console.log(`Removing ${type} command ${cmd.name} ${guild ? `for guild ${guild.name}` : ''}`);
 				await cmd.delete();
 			}
-		}
-		console.time('global commands');
-		for (const c of this.globalCommands.values()) {
-			const find = globalCmds.cache.find((cmd) => cmd.name === c.name.get('default'));
-			if (!find) {
-				console.log(`Registering global command ${c.name.get('default')}`);
-				await globalCmds.create(c.commandInfo());
-			} else {
-				const shouldUpdate = !find.equals(c.commandInfo());
-				console.log(c.name.get('default'), shouldUpdate);
-				if (shouldUpdate) {
-					await globalCmds.edit(find, c.commandInfo());
-				}
-			}
-		}
-		console.timeEnd('global commands');
-	}
+			console.time(`Registering ${type} commands ${guild ? `for guild ${guild.name}` : ''}`);
+			await Promise.all(
+				all_cmds[type].map(async (local_cmd) => {
+					const local_cmd_info = local_cmd.commandInfo();
+					const find = manager.cache.find((cmd) => cmd.name === local_cmd.name.default);
+					if (!find) {
+						console.log(`Registering ${type} command ${local_cmd.name.default} ${guild ? `for guild ${guild.name}` : ''}`);
+						await manager.create(local_cmd_info);
+					} else {
+						const should_update = !find.equals(local_cmd_info);
+						console.log(local_cmd.name.default, should_update);
+						if (should_update) {
+							await manager.edit(find.id, local_cmd_info);
+						}
+					}
+				})
+			);
+			console.timeEnd(`Registering ${type} commands ${guild ? `for guild ${guild.name}` : ''}`);
+		};
 
-	private async registerAllGuildCommands(): Promise<void> {
-		await Promise.allSettled(this.client.guilds.cache.map((g) => this.registerGuildCommands(g)));
-	}
+		if (local_guild_commands.size > 0) {
+			await Promise.all(
+				this.guilds.cache.map(async (guild) => {
+					await register_commands({
+						manager: guild.commands,
+						guild
+					});
+				})
+			);
+		}
 
-	private async registerGuildCommands(guild: Guild): Promise<void> {
-		await guild.commands.fetch({
-			withLocalizations: true
+		await register_commands({
+			manager: this.application.commands
 		});
+	}
 
-		for (const cmd of guild.commands.cache.values()) {
-			if (!this.guildCommands.has(cmd.name)) {
-				console.log(`Removing guild command ${cmd.name} from ${guild.name}`);
-				await cmd.delete();
-			}
+	findCommand(cmd_name: string): Command<this> {
+		const cmd = this.commands.get(cmd_name);
+		if (!cmd) {
+			throw new Error(`Command ${cmd_name} not found`);
 		}
-
-		console.time(`guild commands ${guild.name}`);
-		for (const c of this.guildCommands.values()) {
-			const find = guild.commands.cache.find((cmd) => cmd.name === c.name.get('default'));
-			if (!find) {
-				console.log(`Registering guild command ${c.name.get('default')} in ${guild.name}`);
-				await guild.commands.create(c.commandInfo());
-			} else {
-				const shouldUpdate = !find.equals(c.commandInfo());
-				console.log(c.name.get('default'), shouldUpdate);
-				if (shouldUpdate) {
-					await guild.commands.edit(find, c.commandInfo());
-				}
-			}
-		}
-		console.timeEnd(`guild commands ${guild.name}`);
+		return cmd;
 	}
 
 	async init(_token?: string): Promise<this> {
@@ -166,19 +121,16 @@ class Meinu {
 		if (typeof process.env.TOKEN === 'undefined' && typeof _token === 'undefined') {
 			throw 'Token not defined.';
 		}
+		await super.login(_token ?? process.env.TOKEN);
 
-		await this.client.login(_token ?? process.env.TOKEN);
-
-		await new Promise((res) => this.client.once('ready', res));
-
-		if (!this.client.user) {
+		if (!this.user) {
 			throw new Error('Client user is not defined');
 		}
 
-		await this.initCommands();
+		await this.init_commands();
 
 		this.handler = new InteractionHandler(this);
-		console.log(`Logged in as ${this.client.user.tag}!`);
+		console.log(`Logged in as ${this.user.tag}!`);
 		return this;
 	}
 }

@@ -16,7 +16,7 @@ export class InteractionHandler {
 	constructor(inst: Meinu) {
 		this.inst = inst;
 
-		this.inst.client.on('interactionCreate', async (interaction) => {
+		this.inst.on('interactionCreate', async (interaction) => {
 			try {
 				await this.matchInteraction(interaction);
 			} catch {}
