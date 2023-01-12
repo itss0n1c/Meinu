@@ -4,7 +4,6 @@ import {
 	ClientOptions,
 	Collection,
 	ColorResolvable,
-	Colors,
 	GatewayIntentBits,
 	Guild,
 	GuildApplicationCommandManager
@@ -16,17 +15,17 @@ export interface MeinuOptions {
 	name: string;
 	owners: string[];
 	color: ColorResolvable;
-	clientOptions: ClientOptions;
+	clientOptions?: ClientOptions;
 }
 
-abstract class Meinu extends Client {
+class Meinu extends Client {
 	name: string;
 	color: ColorResolvable;
 	owners: string[];
 	handler: InteractionHandler | undefined;
 	commands: Collection<string, Command<this>>;
 
-	constructor(opts: Partial<MeinuOptions>) {
+	constructor(opts: MeinuOptions) {
 		if (opts.clientOptions) {
 			super(opts.clientOptions);
 		} else {
@@ -34,9 +33,9 @@ abstract class Meinu extends Client {
 				intents: [ GatewayIntentBits.Guilds ]
 			});
 		}
-		this.name = opts.name ?? 'Meinu';
-		this.color = opts.color ?? Colors.Blue;
-		this.owners = opts.owners ?? [];
+		this.name = opts.name;
+		this.color = opts.color;
+		this.owners = opts.owners;
 		this.commands = new Collection<string, Command<this>>();
 		this.handler = undefined;
 	}
@@ -60,16 +59,22 @@ abstract class Meinu extends Client {
 				withLocalizations: true
 			});
 			const type = guild ? 'guild' : 'global';
-			const local_cmds = type === 'global' ? local_global_commands : local_guild_commands;
+			const all_cmds = {
+				global: local_global_commands,
+				guild: local_guild_commands
+			};
+			// eslint-disable-next-line no-unused-vars
 			for (const cmd of manager.cache.values()) {
-				if (!local_cmds.has(cmd.name)) {
-					console.log(`Removing ${type} command ${cmd.name} ${guild ? `for guild ${guild.name}` : ''}`);
-					await cmd.delete();
+				const local_cmd = all_cmds[type].get(cmd.name);
+				if (local_cmd) {
+					continue;
 				}
+				console.log(`Removing ${type} command ${cmd.name} ${guild ? `for guild ${guild.name}` : ''}`);
+				await cmd.delete();
 			}
 			console.time(`Registering ${type} commands ${guild ? `for guild ${guild.name}` : ''}`);
 			await Promise.all(
-				local_cmds.map(async (local_cmd) => {
+				all_cmds[type].map(async (local_cmd) => {
 					const local_cmd_info = local_cmd.commandInfo();
 					const find = manager.cache.find((cmd) => cmd.name === local_cmd.name.default);
 					if (!find) {
@@ -98,11 +103,9 @@ abstract class Meinu extends Client {
 			);
 		}
 
-		if (local_global_commands.size > 0) {
-			await register_commands({
-				manager: this.application.commands
-			});
-		}
+		await register_commands({
+			manager: this.application.commands
+		});
 	}
 
 	findCommand(cmd_name: string): Command<this> {
