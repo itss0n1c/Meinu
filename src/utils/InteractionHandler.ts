@@ -73,8 +73,24 @@ export class InteractionHandler {
 			cmds.push(main);
 			if (int.isChatInputCommand() || int.type === InteractionType.ApplicationCommandAutocomplete) {
 				try {
+					const group = int.options.getSubcommandGroup();
 					const sub = int.options.getSubcommand();
-					const cmd = main.subcommands.find((c) => c.name.get('default') === sub);
+					let cmd: Command | undefined;
+					if (group) {
+						const group_cmds = main.subcommands.filter((c) => c.name.default.startsWith(group));
+						if (!group_cmds.length) {
+							throw 404;
+						}
+						cmd = group_cmds.find((c) => c.name.default === `${group} ${sub}`);
+						if (!cmd) {
+							throw 404;
+						}
+					} else if (sub) {
+						cmd = main.subcommands.find((c) => c.name.default === sub);
+						if (!cmd) {
+							throw 404;
+						}
+					}
 					if (!cmd) {
 						throw 404;
 					}
@@ -87,11 +103,14 @@ export class InteractionHandler {
 			if (msg_int) {
 				if (msg_int.type === InteractionType.ApplicationCommand) {
 					let maincmd = this.inst.findCommand(msg_int.commandName);
-					console.log(msg_int);
+					// console.log(msg_int);
 
 					if (!maincmd) {
 						const [ parent, ...sub ] = msg_int.commandName.split(' ');
-						console.log(parent, sub, msg_int);
+
+						console.log({ parent,
+							sub,
+							name: msg_int.commandName });
 						maincmd = this.inst.findCommand(parent);
 						if (!maincmd) {
 							throw new Error('Command not found.');
@@ -110,7 +129,7 @@ export class InteractionHandler {
 										if (s.type === ApplicationCommandOptionType.SubcommandGroup) {
 											const find = s.options?.find((o) => o.name === sub[1]);
 											if (find) {
-												const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === find.name);
+												const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === `${s.name} ${find.name}`);
 												if (subcmd) {
 													cmds.push(subcmd);
 													found = subcmd;

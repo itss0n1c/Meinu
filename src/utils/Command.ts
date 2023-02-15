@@ -106,9 +106,6 @@ export class Command<Inst = Meinu> {
 	}
 
 	addSubCommandGroup(group: SubCommandGroup<Command<Inst>>): this {
-		for (const cmd of group.commands) {
-			this.subcommands.push(cmd);
-		}
 		const opts: Partial<ApplicationCommandOptionData> = {
 			type: ApplicationCommandOptionType.SubcommandGroup,
 			options: group.commands.map((c) => {
@@ -150,6 +147,11 @@ export class Command<Inst = Meinu> {
 			opts.description = group.description;
 		}
 		this.options.push(opts as ApplicationCommandOptionData);
+
+		for (const cmd of group.commands) {
+			cmd.name.set('default', `${group.name} ${cmd.name.get('default')}`);
+			this.subcommands.push(cmd);
+		}
 
 		return this;
 	}
