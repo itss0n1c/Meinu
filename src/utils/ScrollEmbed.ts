@@ -57,6 +57,9 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	extra_row?: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>;
 }
 
+// eslint-disable-next-line no-unused-vars
+const try_prom = <T>(prom: Promise<T>) => prom.catch();
+
 export class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
 	embed_data: Data;
@@ -97,11 +100,13 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.index = 0;
 		this.components[0].components[0].setDisabled(this.index === 0);
 		this.components[0].components[1].setDisabled(this.index === this.embeds.length - 1);
-		await this.int.editReply({
-			embeds: [ this.embeds[this.index] ],
-			components: this.components,
-			files: this.embed_datas[this.index].files
-		});
+		await try_prom(
+			this.int.editReply({
+				embeds: [ this.embeds[this.index] ],
+				components: this.components,
+				files: this.embed_datas[this.index].files
+			})
+		);
 		if (bint) {
 			await bint.deferUpdate();
 		}
@@ -159,18 +164,28 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		}
 
 		let scroll_embed;
+		console.log(int.deferred, int.replied);
 		if (int.deferred || int.replied) {
-			scroll_embed = await int.editReply({
-				embeds: [ this.embeds[0] ],
-				components: this.components,
-				files: this.embed_datas[0].files
-			});
+			scroll_embed = await try_prom(
+				this.int.editReply({
+					embeds: [ this.embeds[0] ],
+					components: this.components,
+					files: this.embed_datas[0].files
+				})
+			);
 		} else {
-			scroll_embed = await int.reply({
-				embeds: [ this.embeds[0] ],
-				components: this.components,
-				files: this.embed_datas[0].files
-			});
+			scroll_embed = await try_prom(
+				this.int.reply({
+					embeds: [ this.embeds[0] ],
+					components: this.components,
+					files: this.embed_datas[0].files
+				})
+			);
+		}
+		console.log(scroll_embed);
+
+		if (!scroll_embed) {
+			throw new Error('Scroll Embed failed to send.');
 		}
 
 		const filter = (i: MessageComponentInteraction) =>
@@ -218,11 +233,13 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 		this.components[0].components[0].setDisabled(this.index === 0);
 		this.components[0].components[1].setDisabled(this.index === this.embeds.length - 1);
-		await this.int.editReply({
-			embeds: [ this.embeds[this.index] ],
-			components: this.components,
-			files: this.embed_datas[this.index].files
-		});
+		await try_prom(
+			this.int.editReply({
+				embeds: [ this.embeds[this.index] ],
+				components: this.components,
+				files: this.embed_datas[this.index].files
+			})
+		);
 
 		if (bint) {
 			await bint.deferUpdate();
