@@ -98,8 +98,9 @@ export class InteractionHandler {
 				} catch (e) {}
 			}
 		}
-		if (int.isAnySelectMenu() || int.isButton()) {
+		if (int.isMessageComponent()) {
 			const msg_int = int.message.interaction;
+
 			if (msg_int) {
 				if (msg_int.type === InteractionType.ApplicationCommand) {
 					let maincmd = this.inst.findCommand(msg_int.commandName);
@@ -158,41 +159,43 @@ export class InteractionHandler {
 					}
 				}
 			} else {
-				const [ cmdname, ...rest ] = int.customId.split('-');
-
-				const cmd = this.inst.findCommand(cmdname);
-				if (!cmd) {
-					throw new Error('Command not found.');
-				}
-				cmds.push(cmd);
-				if (rest.length > 0) {
-					const [ subname, id ] = rest;
-					console.log(subname, id);
-					const subcmd = cmd.subcommands.find((c) => c.name.get('default') === subname);
-					if (subcmd) {
-						cmds.push(subcmd);
-					}
-				}
+				cmds.push(...this.resolve_cmd_path(int.customId));
 			}
 		}
 
 		if (int.isModalSubmit()) {
-			const [ cmdname, ...rest ] = int.customId.split('-');
+			cmds.push(...this.resolve_cmd_path(int.customId));
+		}
+		return cmds;
+	}
 
-			const cmd = this.inst.findCommand(cmdname);
-			if (!cmd) {
-				throw new Error('Command not found.');
-			}
-			cmds.push(cmd);
-			if (rest.length > 0) {
-				const [ subname, id ] = rest;
-				console.log(subname, id);
-				const subcmd = cmd.subcommands.find((c) => c.name.get('default') === subname);
-				if (subcmd) {
-					cmds.push(subcmd);
-				}
+	private resolve_cmd_path(custom_id: string): Command[] {
+		const cmds: Command[] = [];
+		const split = custom_id.split('-');
+		split.splice(split.length - 1, 1);
+		const [ cmdname, ...rest ] = split;
+		console.log({
+			cmdname,
+			rest,
+			custom_id
+		});
+
+		const cmd = this.inst.findCommand(cmdname);
+		if (!cmd) {
+			throw new Error('Command not found.');
+		}
+		cmds.push(cmd);
+		if (rest.length > 0) {
+			const subcmd = cmd.subcommands.find((c) => c.name.get('default') === rest.join(' '));
+			if (subcmd) {
+				cmds.push(subcmd);
 			}
 		}
+
+		console.log(
+			'resolve_cmd_path',
+			cmds.map((c) => c.name)
+		);
 		return cmds;
 	}
 
