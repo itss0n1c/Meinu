@@ -54,8 +54,13 @@ export class InteractionHandler {
 			}
 		} catch (e) {
 			console.error(e);
-			if (interaction.isRepliable() && !interaction.replied) {
-				await interaction.reply({
+			if (interaction.isRepliable()) {
+				if (interaction.replied) {
+					return interaction.editReply({
+						content: e instanceof Error ? e.message : 'An error occured while executing the command.'
+					});
+				}
+				return interaction.reply({
 					content: e instanceof Error ? e.message : 'An error occured while executing the command.',
 					ephemeral: true
 				});
