@@ -1,4 +1,5 @@
-import { ButtonStyle, Command, create_scroll_embed } from '../../src/index.js';
+import { AttachmentBuilder, Command, DataResolver, create_scroll_embed } from '../../src/index.js';
+
 export default new Command({
 	name: 'scroll_embed',
 	description: 'Scroll Embed'
@@ -18,25 +19,25 @@ export default new Command({
 	await create_scroll_embed({
 		int,
 		data: gen_data,
-		match: (val, index) => ({
-			title: val.title,
-			description: val.description.replace('{page}', `${index + 1}`),
-			author: {
-				name: val.author
-			},
-			timestamp: val.date.toJSON()
-		}),
-		buttons: [
-			{
-				id: 'extra',
-				label: 'Extra',
-				style: ButtonStyle.Primary,
-				action: (int) =>
-					int.reply({
-						content: 'wow, you clicked the extra button!',
-						ephemeral: true
-					})
-			}
-		]
+		match: async (val, index) => {
+			const res = await DataResolver.resolveFile('https://thispersondoesnotexist.com/');
+			const img = new AttachmentBuilder(res.data, {
+				name: 'thispersondoesnotexist.jpg'
+			});
+			return {
+				embed: {
+					title: val.title,
+					description: val.description.replace('{page}', `${index + 1}`),
+					author: {
+						name: val.author
+					},
+					image: {
+						url: `attachment://${img.name}`
+					},
+					timestamp: val.date.toJSON()
+				},
+				files: [ img ]
+			};
+		}
 	});
 });
