@@ -87,6 +87,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const can_go_back = this.index !== 0;
 		const can_go_forward = this.embed_data.length > this.index + 1;
 
+		if (extra_rows) {
+			rows.push(...extra_rows);
+		}
+
 		const btns = [
 			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_back),
 			new ButtonBuilder().setCustomId('scroll_embed_next').setLabel('→').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_forward),
@@ -101,10 +105,6 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		for (const chunk of chunks) {
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(chunk);
 			rows.push(row);
-		}
-
-		if (extra_rows) {
-			rows.push(...extra_rows);
 		}
 
 		return rows;
