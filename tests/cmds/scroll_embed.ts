@@ -1,4 +1,4 @@
-import { AttachmentBuilder, Command, DataResolver, create_scroll_embed } from '../../src/index.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Command, DataResolver, create_scroll_embed } from '../../src/index.js';
 
 export default new Command({
 	name: 'scroll_embed',
@@ -36,7 +36,12 @@ export default new Command({
 					},
 					timestamp: val.date.toJSON()
 				},
-				files: [ img ]
+				files: [ img ],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>().addComponents(
+						new ButtonBuilder().setCustomId('random').setLabel('Random').setStyle(ButtonStyle.Secondary)
+					)
+				]
 			};
 		}
 	});

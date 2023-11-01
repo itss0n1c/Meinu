@@ -6,7 +6,6 @@ import {
 	ButtonBuilder,
 	ButtonInteraction,
 	ButtonStyle,
-	InteractionResponse,
 	MessageComponentInteraction,
 	RepliableInteraction,
 	RoleSelectMenuBuilder,
@@ -18,32 +17,11 @@ type ScrollDataType = Array<Record<string, any>>;
 
 type ScrollDataFn<Data extends ScrollDataType> = () => Data | Promise<Data>;
 
-interface ExtraButtonBase<Data extends ScrollDataType> {
-	id: string;
-	// eslint-disable-next-line no-unused-vars
-	action: (int: ButtonInteraction, current_val: Data[0]) => void | Promise<InteractionResponse | void>;
-	style: ButtonStyle;
-}
-
-interface ExtraButtonLabel {
-	label: string;
-}
-
-interface ExtraButtonEmoji {
-	emoji: string;
-}
-
-interface ExtraButtonLink extends ExtraButtonLabel, ExtraButtonEmoji {
-	url: string;
-	style: ButtonStyle.Link;
-}
-
 interface MatchedEmbed {
 	embed: Omit<APIEmbed, 'footer' | 'type'>;
 	files?: AttachmentBuilder[];
+	components?: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>>;
 }
-
-type ExtraButton<Data extends ScrollDataType> = ExtraButtonBase<Data> & (ExtraButtonLink | ExtraButtonLabel | ExtraButtonEmoji);
 
 type AnySelectMenuBuilder = StringSelectMenuBuilder | RoleSelectMenuBuilder | UserSelectMenuBuilder;
 
@@ -52,8 +30,6 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	data: ScrollDataFn<Data>;
 	// eslint-disable-next-line no-unused-vars
 	match: (val: Data[number], index: number, array: Data[number][]) => Awaitable<MatchedEmbed>;
-	buttons?: ExtraButton<Data>[];
-	extra_row?: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>;
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -66,9 +42,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	index = 0;
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
-			...data,
-			buttons: data.buttons ?? [],
-			extra_row: data.extra_row ?? new ActionRowBuilder()
+			...data
 		};
 		this.int = data.int;
 		this.embed_data = res;
@@ -81,10 +55,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.embed_data = await this.data.data();
 		this.index = 0;
 
-		const components = this.render_components(this.data.buttons);
-
 		const current_data = this.embed_data[this.index];
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+
+		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
 			embeds: [ current_embed.embed ],
@@ -108,7 +82,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		return inst.init();
 	}
 
-	private render_components(extras: ExtraButton<Data>[]): Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> {
+	private render_components(extra_rows?: MatchedEmbed['components']): Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> {
 		const rows: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>[] = [];
 		const can_go_back = this.index !== 0;
 		const can_go_forward = this.embed_data.length > this.index + 1;
@@ -118,25 +92,6 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			new ButtonBuilder().setCustomId('scroll_embed_next').setLabel('→').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_forward),
 			new ButtonBuilder().setCustomId('scroll_embed_reload').setLabel('↻').setStyle(ButtonStyle.Secondary)
 		];
-
-		for (const btn of extras) {
-			if (btn) {
-				const button = new ButtonBuilder().setCustomId(btn.id);
-				if ('url' in btn) {
-					button.setURL(btn.url).setLabel(btn.label);
-				}
-				if ('emoji' in btn || 'label' in btn) {
-					button.setStyle(btn.style);
-				}
-				if ('emoji' in btn) {
-					button.setEmoji(btn.emoji);
-				}
-				if ('label' in btn) {
-					button.setLabel(btn.label);
-				}
-				btns.push(button);
-			}
-		}
 
 		const chunks = [];
 		for (let i = 0; i < btns.length; i += 5) {
@@ -148,25 +103,24 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			rows.push(row);
 		}
 
-		if (this.data.extra_row && this.data.extra_row.components.length > 0) {
-			rows.push(this.data.extra_row);
+		if (extra_rows) {
+			rows.push(...extra_rows);
 		}
 
 		return rows;
 	}
 
 	private async init(): Promise<this> {
-		const { int, buttons } = this.data;
+		const { int } = this.data;
 		if (!int.isRepliable()) {
 			throw new Error('Interaction is not repliable.');
 		}
-
-		const components = this.render_components(buttons);
 
 		let scroll_embed;
 		console.log(int.deferred, int.replied);
 		const current_data = this.embed_data[this.index];
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
 			embeds: [ current_embed.embed ],
@@ -194,17 +148,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		}
 
 		const filter = (i: MessageComponentInteraction) =>
-			i.customId === 'scroll_embed_prev' ||
-			i.customId === 'scroll_embed_next' ||
-			i.customId === 'scroll_embed_reload' ||
-			buttons.some((b) => b.id === i.customId);
+			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || i.customId === 'scroll_embed_reload';
 		const collector = scroll_embed.createMessageComponentCollector({ filter });
 		collector.on('collect', async (bint) => {
 			if (bint.isButton()) {
-				const find = buttons.find((b) => b.id === bint.customId);
-				if (find) {
-					await find.action(bint, this.embed_data[this.index]);
-				}
 				switch (bint.customId) {
 					case 'scroll_embed_prev':
 						await this.scroll_embed_move('prev', bint);
@@ -236,10 +183,9 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				break;
 		}
 
-		const components = this.render_components(this.data.buttons);
-
 		const current_data = this.embed_data[this.index];
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
 			embeds: [ current_embed.embed ],
