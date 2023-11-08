@@ -17,7 +17,7 @@ type ScrollDataType = Array<Record<string, any>>;
 
 type ScrollDataFn<Data extends ScrollDataType> = () => Data | Promise<Data>;
 
-interface MatchedEmbed {
+export interface MatchedEmbed {
 	embed: Omit<APIEmbed, 'footer' | 'type'>;
 	files?: AttachmentBuilder[];
 	components?: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>>;
@@ -48,7 +48,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.embed_data = res;
 	}
 
-	private async reload_data({ data, bint }: { data?: ScrollDataFn<Data>; bint?: ButtonInteraction } = {}): Promise<void> {
+	async reload_data({ data, bint }: { data?: ScrollDataFn<Data>; bint?: ButtonInteraction } = {}): Promise<void> {
 		if (data) {
 			this.data.data = data;
 		}
