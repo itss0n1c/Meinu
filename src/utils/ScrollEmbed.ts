@@ -33,7 +33,7 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 }
 
 // eslint-disable-next-line no-unused-vars
-const try_prom = <T>(prom: Awaitable<T>) => (prom as Promise<T>).catch((e) => console.error(e)) as Promise<T>;
+const try_prom = <T>(prom: Awaitable<T>) => (prom instanceof Promise ? ((prom as Promise<T>).catch((e) => console.error(e)) as Promise<T>) : (prom as T));
 
 export class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
