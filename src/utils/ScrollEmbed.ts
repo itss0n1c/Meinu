@@ -6,6 +6,7 @@ import {
 	ButtonBuilder,
 	ButtonInteraction,
 	ButtonStyle,
+	EmbedBuilder,
 	MessageComponentInteraction,
 	RepliableInteraction,
 	RoleSelectMenuBuilder,
@@ -18,7 +19,7 @@ type ScrollDataType = Array<Record<string, any>>;
 type ScrollDataFn<Data extends ScrollDataType> = () => Data | Promise<Data>;
 
 export interface MatchedEmbed {
-	embed: Omit<APIEmbed, 'footer' | 'type'>;
+	embed: EmbedBuilder | APIEmbed;
 	files?: AttachmentBuilder[];
 	components?: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>>;
 }

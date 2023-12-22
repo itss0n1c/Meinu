@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Command, DataResolver, create_scroll_embed } from '../../src/index.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Command, DataResolver, EmbedBuilder, create_scroll_embed } from '../../src/index.js';
 
 export default new Command({
 	name: 'scroll_embed',
@@ -25,17 +25,14 @@ export default new Command({
 				name: 'thispersondoesnotexist.jpg'
 			});
 			return {
-				embed: {
-					title: val.title,
-					description: val.description.replace('{page}', `${index + 1}`),
-					author: {
+				embed: new EmbedBuilder()
+					.setTitle(val.title)
+					.setDescription(val.description.replace('{page}', `${index + 1}`))
+					.setAuthor({
 						name: val.author
-					},
-					image: {
-						url: `attachment://${img.name}`
-					},
-					timestamp: val.date.toJSON()
-				},
+					})
+					.setImage(`attachment://${img.name}`)
+					.setTimestamp(val.date),
 				files: [ img ],
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().addComponents(
