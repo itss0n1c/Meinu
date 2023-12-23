@@ -4,9 +4,8 @@ export default new Command({
 	name: 'Get PFP',
 	type: ApplicationCommandType.User
 }).addHandler('userContextMenu', async (bot, int) => {
-	if (!int.guild) {
-		throw new Error('Cannot get pfp of a DM');
-	}
+	if (!int.guild) throw new Error('Cannot get pfp of a DM');
+
 	const user = await int.guild.members.fetch(int.targetId);
 	int.reply({
 		embeds: [

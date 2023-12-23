@@ -115,37 +115,23 @@ export class Command<Inst = Meinu> {
 				opts.name = c.name.get('default');
 				if (c.description instanceof Locales) {
 					opts.description = c.description.get('default');
-					if (c.description.size > 1) {
-						opts.descriptionLocalizations = c.description.toJSON();
-					}
+					if (c.description.size > 1) opts.descriptionLocalizations = c.description.toJSON();
 				}
-
-				if (c.name.size > 1) {
-					opts.nameLocalizations = c.name.toJSON();
-				}
-
-				if (c.options.length > 0) {
-					opts.options = c.options as ApplicationCommandSubCommandData['options'];
-				}
+				if (c.name.size > 1) opts.nameLocalizations = c.name.toJSON();
+				if (c.options.length > 0) opts.options = c.options as ApplicationCommandSubCommandData['options'];
 				return opts as ApplicationCommandSubCommandData;
 			})
 		};
 		if (group.name instanceof Locales) {
 			opts.name = group.name.get('default');
-			if (group.name.size > 1) {
-				opts.nameLocalizations = group.name.toJSON();
-			}
-		} else {
-			opts.name = group.name;
-		}
+			if (group.name.size > 1) opts.nameLocalizations = group.name.toJSON();
+		} else opts.name = group.name;
+
 		if (group.description instanceof Locales) {
 			opts.description = group.description.get('default');
-			if (group.description.size > 1) {
-				opts.descriptionLocalizations = group.description.toJSON();
-			}
-		} else {
-			opts.description = group.description;
-		}
+			if (group.description.size > 1) opts.descriptionLocalizations = group.description.toJSON();
+		} else opts.description = group.description;
+
 		this.options.push(opts as ApplicationCommandOptionData);
 
 		for (const cmd of group.commands) {
@@ -162,20 +148,11 @@ export class Command<Inst = Meinu> {
 			const opts: Partial<ApplicationCommandOptionData> = {
 				type: ApplicationCommandOptionType.Subcommand
 			};
-			if (cmd.options.length > 0) {
-				opts.options = cmd.options as ApplicationCommandSubCommandData['options'];
-			}
-
+			if (cmd.options.length > 0) opts.options = cmd.options as ApplicationCommandSubCommandData['options'];
 			opts.name = cmd.name.get('default');
 			opts.description = cmd.description.get('default');
-
-			if (cmd.name.size > 1) {
-				opts.nameLocalizations = cmd.name.toJSON();
-			}
-			if (cmd.description.size > 1) {
-				opts.descriptionLocalizations = cmd.description.toJSON();
-			}
-
+			if (cmd.name.size > 1) opts.nameLocalizations = cmd.name.toJSON();
+			if (cmd.description.size > 1) opts.descriptionLocalizations = cmd.description.toJSON();
 			this.options.push(opts as ApplicationCommandOptionData);
 		}
 		return this;
@@ -186,32 +163,13 @@ export class Command<Inst = Meinu> {
 			type: this.type
 		};
 		res.name = this.name.get('default');
-
 		res.description = this.description.get('default');
-		if (this.description.size > 1) {
-			res.descriptionLocalizations = this.description.toJSON();
-		}
-
-		if (this.name.size > 1) {
-			res.nameLocalizations = this.name.toJSON();
-		}
-
-		if (this.description && this.description.size > 1) {
-			res.descriptionLocalizations = this.description.toJSON();
-		}
-		if (this.dmPermission !== null) {
-			res.dmPermission = this.dmPermission;
-		}
-		if (res.type === ApplicationCommandType.ChatInput) {
-			if (this.options.length > 0) {
-				res.options = this.options;
-			}
-		}
-
-		if (this.nsfw) {
-			res.nsfw = true;
-		}
-
+		if (this.description.size > 1) res.descriptionLocalizations = this.description.toJSON();
+		if (this.name.size > 1) res.nameLocalizations = this.name.toJSON();
+		if (this.description && this.description.size > 1) res.descriptionLocalizations = this.description.toJSON();
+		if (this.dmPermission !== null) res.dmPermission = this.dmPermission;
+		if (res.type === ApplicationCommandType.ChatInput) if (this.options.length > 0) res.options = this.options;
+		if (this.nsfw) res.nsfw = true;
 		return res as CommandInfoExport;
 	}
 
@@ -226,9 +184,6 @@ export class Command<Inst = Meinu> {
 	}
 
 	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<Message | InteractionResponse | void> {
-		if (this.handlers[type]) {
-			const handler = this.handlers[type] as CommandInteractionHandlers<Inst>[Type];
-			return handler(bot, int as any);
-		}
+		if (this.handlers[type]) return (this.handlers[type] as CommandInteractionHandlers<Inst>[Type])(bot, int as any);
 	}
 }

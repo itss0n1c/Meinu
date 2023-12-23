@@ -1,11 +1,12 @@
 {
 	"name": "meinu",
-	"version": "6.2.5",
+	"description": "Yet another Discord.JS framework that, this time, focuses on the new Interactions API.",
+	"author": "S0n1c",
+	"version": "6.3.0",
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"license": "MIT",
-	"author": "S0n1c",
 	"files": [
 		"dist"
 	],
@@ -26,7 +27,6 @@
 		"discord.js": "^14.14.1",
 		"dotenv": "^16.3.1"
 	},
-	"description": "Yet another Discord.JS framework that, this time, focuses on the new Interactions API.",
 	"repository": {
 		"type": "git",
 		"url": "git+ssh://git@github.com/itss0n1c/meinu.git"

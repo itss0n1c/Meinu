@@ -6,14 +6,16 @@ import {
 	ColorResolvable,
 	GatewayIntentBits,
 	Guild,
-	GuildApplicationCommandManager
+	GuildApplicationCommandManager,
+	Snowflake,
+	Team,
+	User
 } from 'discord.js';
 import { config } from 'dotenv';
 import { Command, InteractionHandler } from './utils/index.js';
 
 export interface MeinuOptions {
 	name: string;
-	owners: string[];
 	color: ColorResolvable;
 	clientOptions?: ClientOptions;
 }
@@ -21,7 +23,6 @@ export interface MeinuOptions {
 class Meinu extends Client {
 	name: string;
 	color: ColorResolvable;
-	owners: string[];
 	handler: InteractionHandler | undefined;
 	commands: Collection<string, Command<this>>;
 
@@ -35,9 +36,7 @@ class Meinu extends Client {
 		}
 		this.name = opts.name;
 		this.color = opts.color;
-		this.owners = opts.owners;
 		this.commands = new Collection<string, Command<this>>();
-		this.handler = undefined;
 	}
 
 	register_commands(cmds: Command<this>[]): this {
@@ -45,6 +44,15 @@ class Meinu extends Client {
 			this.commands.set(cmd.name.default, cmd);
 		}
 		return this;
+	}
+
+	async owners(): Promise<Collection<Snowflake, User>> {
+		if (!this.application) throw new Error('Application is not defined');
+		const app = await this.application.fetch();
+		const { owner } = app;
+		if (owner instanceof User) return new Collection([ [ owner.id, owner ] ]);
+		if (owner instanceof Team) return owner.members.mapValues((m) => m.user);
+		throw new Error('Unknown owner type');
 	}
 
 	private async init_commands(): Promise<void> {

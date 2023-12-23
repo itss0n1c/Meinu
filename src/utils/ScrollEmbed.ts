@@ -42,17 +42,14 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	int: RepliableInteraction;
 	index = 0;
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
-		this.data = {
-			...data
-		};
+		this.data = { ...data };
 		this.int = data.int;
 		this.embed_data = res;
 	}
 
 	async reload_data({ data, bint }: { data?: ScrollDataFn<Data>; bint?: ButtonInteraction } = {}): Promise<void> {
-		if (data) {
-			this.data.data = data;
-		}
+		if (data) this.data.data = data;
+
 		this.embed_data = await this.data.data();
 		this.index = 0;
 
@@ -72,9 +69,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				...current_embed_data
 			})
 		);
-		if (bint) {
-			await bint.deferUpdate();
-		}
+		if (bint) await bint.deferUpdate();
 	}
 
 	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<ScrollEmbed<Data>> {
@@ -88,9 +83,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const can_go_back = this.index !== 0;
 		const can_go_forward = this.embed_data.length > this.index + 1;
 
-		if (extra_rows) {
-			rows.push(...extra_rows);
-		}
+		if (extra_rows) rows.push(...extra_rows);
 
 		const btns = [
 			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_back),
@@ -99,9 +92,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		];
 
 		const chunks = [];
-		for (let i = 0; i < btns.length; i += 5) {
-			chunks.push(btns.slice(i, i + 5));
-		}
+		for (let i = 0; i < btns.length; i += 5) chunks.push(btns.slice(i, i + 5));
 
 		for (const chunk of chunks) {
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(chunk);
@@ -113,9 +104,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 	private async init(): Promise<this> {
 		const { int } = this.data;
-		if (!int.isRepliable()) {
-			throw new Error('Interaction is not repliable.');
-		}
+		if (!int.isRepliable()) throw new Error('Interaction is not repliable.');
 
 		let scroll_embed;
 		console.log(int.deferred, int.replied);
@@ -144,9 +133,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		}
 		console.log(scroll_embed);
 
-		if (!scroll_embed) {
-			throw new Error('Scroll Embed failed to send.');
-		}
+		if (!scroll_embed) throw new Error('Scroll Embed failed to send.');
 
 		const filter = (i: MessageComponentInteraction) =>
 			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || i.customId === 'scroll_embed_reload';
@@ -173,14 +160,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	private async scroll_embed_move(action: 'prev' | 'next', bint?: ButtonInteraction) {
 		switch (action) {
 			case 'prev':
-				if (this.index > 0) {
-					this.index--;
-				}
+				if (this.index > 0) this.index--;
 				break;
 			case 'next':
-				if (this.index < this.embed_data.length - 1) {
-					this.index++;
-				}
+				if (this.index < this.embed_data.length - 1) this.index++;
 				break;
 		}
 
@@ -199,9 +182,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			})
 		);
 
-		if (bint) {
-			await bint.deferUpdate();
-		}
+		if (bint) await bint.deferUpdate();
 	}
 }
 

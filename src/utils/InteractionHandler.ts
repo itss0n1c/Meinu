@@ -72,9 +72,8 @@ export class InteractionHandler {
 		const cmds: Command[] = [];
 		if (int.isCommand() || int.type === InteractionType.ApplicationCommandAutocomplete || int.isContextMenuCommand()) {
 			const main = this.inst.findCommand(int.commandName);
-			if (!main) {
-				throw new Error('Command not found.');
-			}
+			if (!main) throw new Error('Command not found.');
+
 			cmds.push(main);
 			if (int.isChatInputCommand() || int.type === InteractionType.ApplicationCommandAutocomplete) {
 				try {
@@ -83,22 +82,14 @@ export class InteractionHandler {
 					let cmd: Command | undefined;
 					if (group) {
 						const group_cmds = main.subcommands.filter((c) => c.name.default.startsWith(group));
-						if (!group_cmds.length) {
-							throw 404;
-						}
+						if (!group_cmds.length) throw 404;
 						cmd = group_cmds.find((c) => c.name.default === `${group} ${sub}`);
-						if (!cmd) {
-							throw 404;
-						}
+						if (!cmd) throw 404;
 					} else if (sub) {
 						cmd = main.subcommands.find((c) => c.name.default === sub);
-						if (!cmd) {
-							throw 404;
-						}
+						if (!cmd) throw 404;
 					}
-					if (!cmd) {
-						throw 404;
-					}
+					if (!cmd) throw 404;
 					cmds.push(cmd);
 				} catch (e) {}
 			}
@@ -154,9 +145,7 @@ export class InteractionHandler {
 							};
 
 							const found = circular_sub(maincmd);
-							if (!found) {
-								throw new Error('Command not found.');
-							}
+							if (!found) throw new Error('Command not found.');
 							cmds.push(found);
 						}
 					} else {
@@ -217,18 +206,10 @@ export class InteractionHandler {
 
 	async cmdPermissionHandler(cmd: Command, int: Interaction): Promise<boolean> {
 		console.log(`testing permission for ${cmd.name.get('default')} for interaction ${int.id} by ${int.user.tag}`);
-
-		if (this.inst.owners.includes(int.user.id)) {
-			return true;
-		}
-		if (cmd.ownersOnly) {
-			return false;
-		}
-
-		if (typeof cmd.permissionRes !== 'undefined') {
-			return this.asyncBool(cmd.permissionRes(this.inst, int));
-		}
-
+		const owners = await this.inst.owners();
+		if (owners.has(int.user.id)) return true;
+		if (cmd.ownersOnly) return false;
+		if (typeof cmd.permissionRes !== 'undefined') return this.asyncBool(cmd.permissionRes(this.inst, int));
 		return true;
 	}
 
