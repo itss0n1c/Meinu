@@ -13,7 +13,7 @@ import {
 	Message,
 	MessageContextMenuCommandInteraction,
 	ModalSubmitInteraction,
-	UserContextMenuCommandInteraction
+	UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { Meinu } from '../index.js';
 import { Locales, PartialLocales, setLocales } from './Locales.js';
@@ -95,7 +95,8 @@ export class Command<Inst = Meinu> {
 		this.type = info.type;
 		this.dmPermission = info.dmPermission ?? null;
 		if (info.type === ApplicationCommandType.ChatInput) {
-			this.description = info.description instanceof Locales ? info.description : setLocales({ default: info.description });
+			this.description =
+				info.description instanceof Locales ? info.description : setLocales({ default: info.description });
 			this.options = info.options ?? [];
 		} else {
 			this.description = setLocales({ default: '' });
@@ -110,7 +111,7 @@ export class Command<Inst = Meinu> {
 			type: ApplicationCommandOptionType.SubcommandGroup,
 			options: group.commands.map((c) => {
 				const opts: Partial<ApplicationCommandSubCommandData> = {
-					type: ApplicationCommandOptionType.Subcommand
+					type: ApplicationCommandOptionType.Subcommand,
 				};
 				opts.name = c.name.get('default');
 				if (c.description instanceof Locales) {
@@ -120,7 +121,7 @@ export class Command<Inst = Meinu> {
 				if (c.name.size > 1) opts.nameLocalizations = c.name.toJSON();
 				if (c.options.length > 0) opts.options = c.options as ApplicationCommandSubCommandData['options'];
 				return opts as ApplicationCommandSubCommandData;
-			})
+			}),
 		};
 		if (group.name instanceof Locales) {
 			opts.name = group.name.get('default');
@@ -146,7 +147,7 @@ export class Command<Inst = Meinu> {
 		this.subcommands.push(...cmds);
 		for (const cmd of cmds) {
 			const opts: Partial<ApplicationCommandOptionData> = {
-				type: ApplicationCommandOptionType.Subcommand
+				type: ApplicationCommandOptionType.Subcommand,
 			};
 			if (cmd.options.length > 0) opts.options = cmd.options as ApplicationCommandSubCommandData['options'];
 			opts.name = cmd.name.get('default');
@@ -160,7 +161,7 @@ export class Command<Inst = Meinu> {
 
 	commandInfo(): CommandInfoExport {
 		const res: Partial<CommandInfoExport> = {
-			type: this.type
+			type: this.type,
 		};
 		res.name = this.name.get('default');
 		res.description = this.description.get('default');
@@ -173,7 +174,10 @@ export class Command<Inst = Meinu> {
 		return res as CommandInfoExport;
 	}
 
-	addHandler<T extends keyof CommandInteractionHandlers<Inst>>(type: T, handler: CommandInteractionHandlers<Inst>[T]): this {
+	addHandler<T extends keyof CommandInteractionHandlers<Inst>>(
+		type: T,
+		handler: CommandInteractionHandlers<Inst>[T],
+	): this {
 		this.handlers[type] = handler;
 		return this;
 	}
@@ -183,7 +187,12 @@ export class Command<Inst = Meinu> {
 		return this;
 	}
 
-	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(type: Type, bot: Inst, int: Interaction): Promise<Message | InteractionResponse | void> {
-		if (this.handlers[type]) return (this.handlers[type] as CommandInteractionHandlers<Inst>[Type])(bot, int as any);
+	async handle<Type extends keyof CommandInteractionHandlers<Inst>>(
+		type: Type,
+		bot: Inst,
+		int: Interaction,
+	): Promise<Message | InteractionResponse | void> {
+		if (this.handlers[type])
+			return (this.handlers[type] as CommandInteractionHandlers<Inst>[Type])(bot, int as any);
 	}
 }

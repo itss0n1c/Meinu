@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, Command } from '../../src/index.js';
+import { ApplicationCommandOptionType, Command } from '../../lib/index.js';
 
 export default new Command({
 	name: 'ac',
@@ -9,15 +9,15 @@ export default new Command({
 			description: 'query',
 			type: ApplicationCommandOptionType.String,
 			required: true,
-			autocomplete: true
-		}
-	]
+			autocomplete: true,
+		},
+	],
 }).addHandler('autocomplete', (bot, int) => {
 	const str = int.options.getString('query', true);
 	return int.respond(
-		[ ...str ].map((c) => ({
+		[...str].map((c) => ({
 			name: c.toUpperCase(),
-			value: c
-		}))
+			value: c,
+		})),
 	);
 });

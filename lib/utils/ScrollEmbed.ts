@@ -7,16 +7,18 @@ import {
 	ButtonInteraction,
 	ButtonStyle,
 	EmbedBuilder,
+	InteractionResponse,
+	Message,
 	MessageComponentInteraction,
 	RepliableInteraction,
 	RoleSelectMenuBuilder,
 	StringSelectMenuBuilder,
-	UserSelectMenuBuilder
+	UserSelectMenuBuilder,
 } from 'discord.js';
 
 type ScrollDataType = Array<Record<string, any>>;
 
-type ScrollDataFn<Data extends ScrollDataType> = () => Data | Promise<Data>;
+type ScrollDataFn<Data extends ScrollDataType> = () => Awaitable<Data>;
 
 export interface MatchedEmbed {
 	embed: EmbedBuilder | APIEmbed;
@@ -34,7 +36,8 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 }
 
 // eslint-disable-next-line no-unused-vars
-const try_prom = <T>(prom: Awaitable<T>) => (prom instanceof Promise ? ((prom as Promise<T>).catch((e) => console.error(e)) as Promise<T>) : (prom as T));
+const try_prom = <T>(prom: Awaitable<T>) =>
+	prom instanceof Promise ? ((prom as Promise<T>).catch((e) => console.error(e)) as Promise<T>) : (prom as T);
 
 export class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
@@ -59,15 +62,15 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
-			embeds: [ current_embed.embed ],
-			files: current_embed.files
+			embeds: [current_embed.embed],
+			files: current_embed.files,
 		};
 
 		await try_prom(
 			this.int.editReply({
 				components,
-				...current_embed_data
-			})
+				...current_embed_data,
+			}),
 		);
 		if (bint) await bint.deferUpdate();
 	}
@@ -78,7 +81,9 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		return inst.init();
 	}
 
-	private render_components(extra_rows?: MatchedEmbed['components']): Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> {
+	private render_components(
+		extra_rows?: MatchedEmbed['components'],
+	): Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> {
 		const rows: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>[] = [];
 		const can_go_back = this.index !== 0;
 		const can_go_forward = this.embed_data.length > this.index + 1;
@@ -86,9 +91,17 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		if (extra_rows) rows.push(...extra_rows);
 
 		const btns = [
-			new ButtonBuilder().setCustomId('scroll_embed_prev').setLabel('←').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_back),
-			new ButtonBuilder().setCustomId('scroll_embed_next').setLabel('→').setStyle(ButtonStyle.Secondary).setDisabled(!can_go_forward),
-			new ButtonBuilder().setCustomId('scroll_embed_reload').setLabel('↻').setStyle(ButtonStyle.Secondary)
+			new ButtonBuilder()
+				.setCustomId('scroll_embed_prev')
+				.setLabel('←')
+				.setStyle(ButtonStyle.Secondary)
+				.setDisabled(!can_go_back),
+			new ButtonBuilder()
+				.setCustomId('scroll_embed_next')
+				.setLabel('→')
+				.setStyle(ButtonStyle.Secondary)
+				.setDisabled(!can_go_forward),
+			new ButtonBuilder().setCustomId('scroll_embed_reload').setLabel('↻').setStyle(ButtonStyle.Secondary),
 		];
 
 		const chunks = [];
@@ -106,29 +119,29 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const { int } = this.data;
 		if (!int.isRepliable()) throw new Error('Interaction is not repliable.');
 
-		let scroll_embed;
+		let scroll_embed: Message | InteractionResponse;
 		console.log(int.deferred, int.replied);
 		const current_data = this.embed_data[this.index];
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
 		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
-			embeds: [ current_embed.embed ],
-			files: current_embed.files
+			embeds: [current_embed.embed],
+			files: current_embed.files,
 		};
 		if (int.deferred || int.replied) {
 			scroll_embed = await try_prom(
 				this.int.editReply({
 					components,
-					...current_embed_data
-				})
+					...current_embed_data,
+				}),
 			);
 		} else {
 			scroll_embed = await try_prom(
 				this.int.reply({
 					components,
-					...current_embed_data
-				})
+					...current_embed_data,
+				}),
 			);
 		}
 		console.log(scroll_embed);
@@ -136,7 +149,9 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		if (!scroll_embed) throw new Error('Scroll Embed failed to send.');
 
 		const filter = (i: MessageComponentInteraction) =>
-			i.customId === 'scroll_embed_prev' || i.customId === 'scroll_embed_next' || i.customId === 'scroll_embed_reload';
+			i.customId === 'scroll_embed_prev' ||
+			i.customId === 'scroll_embed_next' ||
+			i.customId === 'scroll_embed_reload';
 		const collector = scroll_embed.createMessageComponentCollector({ filter });
 		collector.on('collect', async (bint) => {
 			if (bint.isButton()) {
@@ -172,14 +187,14 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
-			embeds: [ current_embed.embed ],
-			files: current_embed.files
+			embeds: [current_embed.embed],
+			files: current_embed.files,
 		};
 		await try_prom(
 			this.int.editReply({
 				components,
-				...current_embed_data
-			})
+				...current_embed_data,
+			}),
 		);
 
 		if (bint) await bint.deferUpdate();

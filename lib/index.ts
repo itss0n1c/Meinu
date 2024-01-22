@@ -9,10 +9,12 @@ import {
 	GuildApplicationCommandManager,
 	Snowflake,
 	Team,
-	User
+	User,
+	resolveColor,
 } from 'discord.js';
 import { config } from 'dotenv';
-import { Command, InteractionHandler } from './utils/index.js';
+import { Command, InteractionHandler, _meinu_log } from './utils/index.js';
+import chalk, { ChalkInstance } from 'chalk';
 
 export interface MeinuOptions {
 	name: string;
@@ -31,7 +33,7 @@ class Meinu extends Client {
 			super(opts.clientOptions);
 		} else {
 			super({
-				intents: [ GatewayIntentBits.Guilds ]
+				intents: [GatewayIntentBits.Guilds],
 			});
 		}
 		this.name = opts.name;
@@ -46,11 +48,15 @@ class Meinu extends Client {
 		return this;
 	}
 
+	get bot_chalk(): ChalkInstance {
+		return chalk.hex(resolveColor(this.color).toString(16));
+	}
+
 	async owners(): Promise<Collection<Snowflake, User>> {
 		if (!this.application) throw new Error('Application is not defined');
 		const app = await this.application.fetch();
 		const { owner } = app;
-		if (owner instanceof User) return new Collection([ [ owner.id, owner ] ]);
+		if (owner instanceof User) return new Collection([[owner.id, owner]]);
 		if (owner instanceof Team) return owner.members.mapValues((m) => m.user);
 		throw new Error('Unknown owner type');
 	}
@@ -62,14 +68,17 @@ class Meinu extends Client {
 		const local_global_commands = this.commands.filter((c) => c.global);
 		const local_guild_commands = this.commands.filter((c) => !c.global);
 
-		const register_commands = async ({ manager, guild }: { manager: ApplicationCommandManager | GuildApplicationCommandManager; guild?: Guild }) => {
+		const register_commands = async ({
+			manager,
+			guild,
+		}: { manager: ApplicationCommandManager | GuildApplicationCommandManager; guild?: Guild }) => {
 			await manager.fetch({
-				withLocalizations: true
+				withLocalizations: true,
 			});
 			const type = guild ? 'guild' : 'global';
 			const all_cmds = {
 				global: local_global_commands,
-				guild: local_guild_commands
+				guild: local_guild_commands,
 			};
 			// eslint-disable-next-line no-unused-vars
 			for (const cmd of manager.cache.values()) {
@@ -77,27 +86,52 @@ class Meinu extends Client {
 				if (local_cmd) {
 					continue;
 				}
-				console.log(`Removing ${type} command ${cmd.name} ${guild ? `for guild ${guild.name}` : ''}`);
-				await cmd.delete();
+				await _meinu_log(
+					{
+						cb: cmd.delete(),
+						title: 'cmd_delete',
+					},
+					`Removing ${type} command ${this.bot_chalk(cmd.name)} ${guild ? `for guild ${guild.name}` : ''}`,
+				);
 			}
-			console.time(`Registering ${type} commands ${guild ? `for guild ${guild.name}` : ''}`);
-			await Promise.all(
-				all_cmds[type].map(async (local_cmd) => {
-					const local_cmd_info = local_cmd.commandInfo();
-					const find = manager.cache.find((cmd) => cmd.name === local_cmd.name.default);
-					if (!find) {
-						console.log(`Registering ${type} command ${local_cmd.name.default} ${guild ? `for guild ${guild.name}` : ''}`);
-						await manager.create(local_cmd_info);
-					} else {
-						const should_update = !find.equals(local_cmd_info);
-						console.log(local_cmd.name.default, should_update);
-						if (should_update) {
-							await manager.edit(find.id, local_cmd_info);
-						}
-					}
-				})
+
+			await _meinu_log(
+				{ title: 'cmd_info' },
+				`Checking ${type} commands ${guild ? `for guild ${guild.name}` : ''}`,
 			);
-			console.timeEnd(`Registering ${type} commands ${guild ? `for guild ${guild.name}` : ''}`);
+
+			await _meinu_log(
+				{
+					cb: Promise.all(
+						all_cmds[type].map(async (local_cmd) => {
+							const local_cmd_info = local_cmd.commandInfo();
+							const find = manager.cache.find((cmd) => cmd.name === local_cmd.name.default);
+							if (!find) {
+								await _meinu_log(
+									{ cb: manager.create(local_cmd_info), title: 'cmd_create' },
+									`Registering ${type} command ${this.bot_chalk(local_cmd.name.default)} ${
+										guild ? `for guild ${guild.name}` : ''
+									}`,
+								);
+							} else {
+								const should_update = !find.equals(local_cmd_info);
+								await _meinu_log(
+									{ cb: void 0, title: 'cmd_status' },
+									`${this.bot_chalk(local_cmd.name.default)} needs update →`,
+									should_update,
+								);
+								if (should_update) {
+									await manager.edit(find.id, local_cmd_info);
+								}
+							}
+						}),
+					),
+					title: 'Commands',
+				},
+				`Registered ${this.bot_chalk(local_guild_commands.size.toLocaleString())} guild commands ${
+					guild ? `for guild ${guild.name}` : ''
+				}`,
+			);
 		};
 
 		if (local_guild_commands.size > 0) {
@@ -105,14 +139,14 @@ class Meinu extends Client {
 				this.guilds.cache.map(async (guild) => {
 					await register_commands({
 						manager: guild.commands,
-						guild
+						guild,
 					});
-				})
+				}),
 			);
 		}
 
 		await register_commands({
-			manager: this.application.commands
+			manager: this.application.commands,
 		});
 	}
 
@@ -125,9 +159,10 @@ class Meinu extends Client {
 	}
 
 	async init(_token?: string): Promise<this> {
+		_meinu_log({ title: 'init' }, `Initializing ${this.bot_chalk(this.name)}`);
 		config();
 		if (typeof process.env.TOKEN === 'undefined' && typeof _token === 'undefined') {
-			throw 'Token not defined.';
+			throw new Error('Token is not defined');
 		}
 		await super.login(_token ?? process.env.TOKEN);
 
@@ -138,7 +173,7 @@ class Meinu extends Client {
 		await this.init_commands();
 
 		this.handler = new InteractionHandler(this);
-		console.log(`Logged in as ${this.user.tag}!`);
+		_meinu_log({ title: 'init' }, `Logged in as ${this.bot_chalk(this.user.tag)}!`);
 		return this;
 	}
 }

@@ -1,9 +1,16 @@
-import { ActionRowBuilder, ApplicationCommandOptionType, ApplicationCommandType, ButtonBuilder, ButtonStyle, Command } from '../../src/index.js';
+import {
+	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ApplicationCommandType,
+	ButtonBuilder,
+	ButtonStyle,
+	Command,
+} from '../../lib/index.js';
 
 export default new Command({
 	name: 'sub',
 	description: 'sub command stuff',
-	type: ApplicationCommandType.ChatInput
+	type: ApplicationCommandType.ChatInput,
 })
 	.addSubCommandGroup({
 		name: 'group1',
@@ -18,35 +25,37 @@ export default new Command({
 						description: 'random shit',
 						required: true,
 						type: ApplicationCommandOptionType.String,
-						autocomplete: true
+						autocomplete: true,
 					},
 					{
 						name: 'baz',
 						description: 'random shit',
 						required: true,
 						type: ApplicationCommandOptionType.String,
-						autocomplete: true
-					}
-				]
+						autocomplete: true,
+					},
+				],
 			})
 				.addHandler('autocomplete', (bot, int) =>
 					int.respond([
 						{
 							name: 'blah',
-							value: 'blah'
+							value: 'blah',
 						},
 						{
 							name: 'blah2',
-							value: 'blah2'
+							value: 'blah2',
 						},
 						{
 							name: 'blah3',
-							value: 'blah3'
-						}
-					])
+							value: 'blah3',
+						},
+					]),
 				)
-				.addHandler('chatInput', (bot, int) => int.reply(`${int.options.getString('bar')} ${int.options.getString('baz')}`))
-		]
+				.addHandler('chatInput', (bot, int) =>
+					int.reply(`${int.options.getString('bar')} ${int.options.getString('baz')}`),
+				),
+		],
 	})
 	.addSubCommandGroup({
 		name: 'group2',
@@ -61,34 +70,34 @@ export default new Command({
 						description: 'random shit',
 						required: true,
 						type: ApplicationCommandOptionType.String,
-						autocomplete: true
-					}
-				]
+						autocomplete: true,
+					},
+				],
 			})
 				.addHandler('autocomplete', (bot, int) =>
 					int.respond([
 						{
 							name: 'bar',
-							value: 'bar'
+							value: 'bar',
 						},
 						{
 							name: 'bar2',
-							value: 'bar2'
+							value: 'bar2',
 						},
 						{
 							name: 'bar3',
-							value: 'bar3'
-						}
-					])
+							value: 'bar3',
+						},
+					]),
 				)
 				.addHandler('button', (bot, int) => int.reply(int.customId))
 				.addHandler('chatInput', (bot, int) => {
 					const row = new ActionRowBuilder<ButtonBuilder>().addComponents([
-						new ButtonBuilder().setLabel('blah').setCustomId('ah').setStyle(ButtonStyle.Primary)
+						new ButtonBuilder().setLabel('blah').setCustomId('ah').setStyle(ButtonStyle.Primary),
 					]);
 					return int.reply({
-						components: [ row ]
+						components: [row],
 					});
-				})
-		]
+				}),
+		],
 	});

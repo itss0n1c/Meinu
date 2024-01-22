@@ -6,7 +6,7 @@ export type PartialLocales = Partial<Record<Locale, string>>;
 export class Locales extends Map<Locale, string> {
 	toJSON(): PartialLocales {
 		const obj: PartialLocales = {};
-		for (const [ key, value ] of this) if (key !== 'default') obj[key] = value;
+		for (const [key, value] of this) if (key !== 'default') obj[key] = value;
 		return obj;
 	}
 
@@ -16,5 +16,5 @@ export class Locales extends Map<Locale, string> {
 }
 
 export function setLocales(locales: PartialLocales): Locales {
-	return new Locales(Object.entries(locales).map(([ key, value ]) => [ key as Locale, value ] as const));
+	return new Locales(Object.entries(locales).map(([key, value]) => [key as Locale, value] as const));
 }

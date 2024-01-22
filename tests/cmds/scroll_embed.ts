@@ -1,8 +1,17 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Command, DataResolver, EmbedBuilder, create_scroll_embed } from '../../src/index.js';
+import {
+	ActionRowBuilder,
+	AttachmentBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	Command,
+	DataResolver,
+	EmbedBuilder,
+	create_scroll_embed,
+} from '../../lib/index.js';
 
 export default new Command({
 	name: 'scroll_embed',
-	description: 'Scroll Embed'
+	description: 'Scroll Embed',
 }).addHandler('chatInput', async (bot, int) => {
 	await int.deferReply();
 
@@ -11,7 +20,7 @@ export default new Command({
 		description: 'This is page {page}',
 		author: `Author ${index + 1}`,
 		// random date using math random
-		date: new Date(2021, Math.floor(Math.random() * 12), Math.floor(Math.random() * 31))
+		date: new Date(2021, Math.floor(Math.random() * 12), Math.floor(Math.random() * 31)),
 	});
 
 	const gen_data = () => Array.from({ length: 10 }, (_, i) => make_data(i));
@@ -22,24 +31,24 @@ export default new Command({
 		match: async (val, index) => {
 			const res = await DataResolver.resolveFile('https://thispersondoesnotexist.com/');
 			const img = new AttachmentBuilder(res.data, {
-				name: 'thispersondoesnotexist.jpg'
+				name: 'thispersondoesnotexist.jpg',
 			});
 			return {
 				embed: new EmbedBuilder()
 					.setTitle(val.title)
 					.setDescription(val.description.replace('{page}', `${index + 1}`))
 					.setAuthor({
-						name: val.author
+						name: val.author,
 					})
 					.setImage(`attachment://${img.name}`)
 					.setTimestamp(val.date),
-				files: [ img ],
+				files: [img],
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().addComponents(
-						new ButtonBuilder().setCustomId('random').setLabel('Random').setStyle(ButtonStyle.Secondary)
-					)
-				]
+						new ButtonBuilder().setCustomId('random').setLabel('Random').setStyle(ButtonStyle.Secondary),
+					),
+				],
 			};
-		}
+		},
 	});
 });

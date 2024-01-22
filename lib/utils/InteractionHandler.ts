@@ -5,9 +5,9 @@ import {
 	Interaction,
 	InteractionResponse,
 	InteractionType,
-	Message
+	Message,
 } from 'discord.js';
-import { Meinu } from '../index.js';
+import { Meinu, _meinu_log, green, meinu_color, red } from '../index.js';
 import { Command, CommandInteractionHandlers } from './Command.js';
 
 export class InteractionHandler {
@@ -57,20 +57,30 @@ export class InteractionHandler {
 			if (interaction.isRepliable()) {
 				if (interaction.replied) {
 					return interaction.editReply({
-						content: e instanceof Error ? e.message : 'An error occured while executing the command.'
+						content: e instanceof Error ? e.message : 'An error occured while executing the command.',
 					});
 				}
-				return interaction.reply({
-					content: e instanceof Error ? e.message : 'An error occured while executing the command.',
-					ephemeral: true
-				});
+				try {
+					await interaction.reply({
+						content: e instanceof Error ? e.message : 'An error occured while executing the command.',
+						ephemeral: true,
+					});
+				} catch {
+					await interaction.editReply({
+						content: e instanceof Error ? e.message : 'An error occured while executing the command.',
+					});
+				}
 			}
 		}
 	}
 
 	resolveCommand(int: Interaction): Command[] {
 		const cmds: Command[] = [];
-		if (int.isCommand() || int.type === InteractionType.ApplicationCommandAutocomplete || int.isContextMenuCommand()) {
+		if (
+			int.isCommand() ||
+			int.type === InteractionType.ApplicationCommandAutocomplete ||
+			int.isContextMenuCommand()
+		) {
 			const main = this.inst.findCommand(int.commandName);
 			if (!main) throw new Error('Command not found.');
 
@@ -100,14 +110,10 @@ export class InteractionHandler {
 			if (msg_int) {
 				if (msg_int.type === InteractionType.ApplicationCommand) {
 					let maincmd = this.inst.findCommand(msg_int.commandName);
-					// console.log(msg_int);
 
 					if (!maincmd) {
-						const [ parent, ...sub ] = msg_int.commandName.split(' ');
+						const [parent, ...sub] = msg_int.commandName.split(' ');
 
-						console.log({ parent,
-							sub,
-							name: msg_int.commandName });
 						maincmd = this.inst.findCommand(parent);
 						if (!maincmd) {
 							throw new Error('Command not found.');
@@ -116,7 +122,9 @@ export class InteractionHandler {
 
 						if (sub.length > 0) {
 							const subs = maincmd.options.filter(
-								(o) => o.type === ApplicationCommandOptionType.SubcommandGroup || o.type === ApplicationCommandOptionType.Subcommand
+								(o) =>
+									o.type === ApplicationCommandOptionType.SubcommandGroup ||
+									o.type === ApplicationCommandOptionType.Subcommand,
 							) as Array<ApplicationCommandSubCommandData | ApplicationCommandSubGroupData>;
 							// circulate through subcommands
 							const circular_sub = (maincmd: Command) => {
@@ -126,14 +134,18 @@ export class InteractionHandler {
 										if (s.type === ApplicationCommandOptionType.SubcommandGroup) {
 											const find = s.options?.find((o) => o.name === sub[1]);
 											if (find) {
-												const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === `${s.name} ${find.name}`);
+												const subcmd = maincmd.subcommands.find(
+													(c) => c.name.get('default') === `${s.name} ${find.name}`,
+												);
 												if (subcmd) {
 													cmds.push(subcmd);
 													found = subcmd;
 												}
 											}
 										} else {
-											const subcmd = maincmd.subcommands.find((c) => c.name.get('default') === s.name);
+											const subcmd = maincmd.subcommands.find(
+												(c) => c.name.get('default') === s.name,
+											);
 											if (subcmd) {
 												cmds.push(subcmd);
 												found = subcmd;
@@ -167,12 +179,7 @@ export class InteractionHandler {
 		const cmds: Command[] = [];
 		const split = custom_id.split('-');
 		split.splice(split.length - 1, 1);
-		const [ cmdname, ...rest ] = split;
-		console.log({
-			cmdname,
-			rest,
-			custom_id
-		});
+		const [cmdname, ...rest] = split;
 
 		const cmd = this.inst.findCommand(cmdname);
 		if (!cmd) {
@@ -186,10 +193,6 @@ export class InteractionHandler {
 			}
 		}
 
-		console.log(
-			'resolve_cmd_path',
-			cmds.map((c) => c.name)
-		);
 		return cmds;
 	}
 
@@ -200,20 +203,32 @@ export class InteractionHandler {
 		} catch (e) {
 			res = false;
 		}
-		console.log(res);
 		return res;
 	}
 
 	async cmdPermissionHandler(cmd: Command, int: Interaction): Promise<boolean> {
-		console.log(`testing permission for ${cmd.name.get('default')} for interaction ${int.id} by ${int.user.tag}`);
-		const owners = await this.inst.owners();
-		if (owners.has(int.user.id)) return true;
-		if (cmd.ownersOnly) return false;
-		if (typeof cmd.permissionRes !== 'undefined') return this.asyncBool(cmd.permissionRes(this.inst, int));
-		return true;
+		const cmd_name = cmd.name.get('default');
+		const check_passes = async () => {
+			const owners = await this.inst.owners();
+			if (owners.has(int.user.id)) return true;
+			if (cmd.ownersOnly) return false;
+			if (typeof cmd.permissionRes !== 'undefined') return this.asyncBool(cmd.permissionRes(this.inst, int));
+			return true;
+		};
+		const passed = await check_passes();
+		_meinu_log(
+			{ title: 'interaction_handler' },
+			`${meinu_color(`${int.user.displayName} [${int.user.id}]`)} using ${this.inst.bot_chalk(cmd_name)} → ${
+				passed ? green('passed') : red('failed')
+			}`,
+		);
+		return passed;
 	}
 
-	async handleInteraction(type: keyof CommandInteractionHandlers<Meinu>, int: Interaction): Promise<Message | InteractionResponse | void> {
+	async handleInteraction(
+		type: keyof CommandInteractionHandlers<Meinu>,
+		int: Interaction,
+	): Promise<Message | InteractionResponse | void> {
 		const cmds = this.resolveCommand(int);
 		if (cmds.length > 0) {
 			const maincmd = cmds[0];

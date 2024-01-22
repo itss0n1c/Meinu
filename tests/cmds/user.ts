@@ -1,9 +1,9 @@
 import { inspect } from 'util';
-import { ApplicationCommandType, Command } from '../../src/index.js';
+import { ApplicationCommandType, Command } from '../../lib/index.js';
 
 const user = new Command({
 	name: 'user action',
-	type: ApplicationCommandType.User
+	type: ApplicationCommandType.User,
 }).addHandler('userContextMenu', async (bot, int) => {
 	if (!int.guild) throw 'Guild not found';
 

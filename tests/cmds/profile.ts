@@ -1,8 +1,8 @@
-import { ApplicationCommandType, Command, EmbedBuilder } from '../../src/index.js';
+import { ApplicationCommandType, Command, EmbedBuilder } from '../../lib/index.js';
 
 export default new Command({
 	name: 'Get PFP',
-	type: ApplicationCommandType.User
+	type: ApplicationCommandType.User,
 }).addHandler('userContextMenu', async (bot, int) => {
 	if (!int.guild) throw new Error('Cannot get pfp of a DM');
 
@@ -11,9 +11,9 @@ export default new Command({
 		embeds: [
 			new EmbedBuilder().setDescription(`${user.user}'s PFP`).setImage(
 				user.displayAvatarURL({
-					extension: 'png'
-				})
-			)
-		]
+					extension: 'png',
+				}),
+			),
+		],
 	});
 });
