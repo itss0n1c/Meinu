@@ -33,10 +33,10 @@ let commands = [
 		return int.editReply({
 			content: `🏓 Pong! ${diff}ms`
 		});
-	});
+	})
 ];
 
-Meinu({
+new Meinu({
 	name: 'MyBot',
 	color: 'LuminousVividPink',
 })
