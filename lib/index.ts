@@ -15,6 +15,7 @@ import {
 import { config } from 'dotenv';
 import { Command, InteractionHandler, _meinu_log } from './utils/index.js';
 import chalk, { ChalkInstance } from 'chalk';
+import packageFile from '../package.json';
 
 export interface MeinuOptions {
 	name: string;
@@ -27,6 +28,7 @@ class Meinu extends Client {
 	color: ColorResolvable;
 	handler: InteractionHandler | undefined;
 	commands: Collection<string, Command<this>>;
+	meinu_version = packageFile.version;
 
 	constructor(opts: MeinuOptions) {
 		if (opts.clientOptions) {

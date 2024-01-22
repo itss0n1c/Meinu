@@ -120,7 +120,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		if (!int.isRepliable()) throw new Error('Interaction is not repliable.');
 
 		let scroll_embed: Message | InteractionResponse;
-		console.log(int.deferred, int.replied);
+
 		const current_data = this.embed_data[this.index];
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
 		const components = this.render_components(current_embed.components);
@@ -144,7 +144,6 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				}),
 			);
 		}
-		console.log(scroll_embed);
 
 		if (!scroll_embed) throw new Error('Scroll Embed failed to send.');
 
