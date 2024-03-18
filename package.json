@@ -1,38 +1,37 @@
 {
-  "name": "meinu",
-  "description": "A discord.js wrapper, with a focus on slash commands.",
-  "author": "S0n1c",
-  "version": "6.4.3",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "type": "module",
-  "license": "MIT",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "./build.sh",
-    "dev": "bun --watch ./tests/index.ts",
-    "lint": "biome check lib"
-  },
-  "devDependencies": {
-    "typescript": "^5.3.3",
-    "@biomejs/biome": "^1.5.2",
-    "@types/bun": "latest"
-  },
-  "dependencies": {
-    "chalk": "^5.3.0",
-    "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/itss0n1c/meinu.git"
-  },
-  "packageManager": "yarn@4.0.2",
-  "bugs": {
-    "url": "https://github.com/itss0n1c/meinu/issues"
-  },
-  "homepage": "https://github.com/itss0n1c/meinu#readme"
+	"name": "meinu",
+	"description": "A discord.js wrapper, with a focus on slash commands.",
+	"author": "S0n1c",
+	"version": "6.5.0",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"license": "MIT",
+	"files": ["dist"],
+	"scripts": {
+		"build": "./build.sh",
+		"dev": "nodemon --exec bun ./tests/index.ts",
+		"lint": "biome check lib"
+	},
+	"devDependencies": {
+		"typescript": "^5.3.3",
+		"@biomejs/biome": "^1.5.2",
+		"@types/bun": "latest",
+		"nodemon": "^3.1.0"
+	},
+	"dependencies": {
+		"chalk": "^5.3.0",
+		"discord.js": "^14.14.1",
+		"dotenv": "^16.3.1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/itss0n1c/meinu.git"
+	},
+	"packageManager": "yarn@4.0.2",
+	"bugs": {
+		"url": "https://github.com/itss0n1c/meinu/issues"
+	},
+	"homepage": "https://github.com/itss0n1c/meinu#readme"
 }

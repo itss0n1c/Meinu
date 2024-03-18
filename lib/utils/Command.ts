@@ -34,11 +34,23 @@ type handler<Inst, T extends keyof CommandInteractionHandlers<Inst>> = Partial<{
 	[K in T]: CommandInteractionHandlers<Inst>[K];
 }>;
 
+export enum CommandIntegrationType {
+	GUILD_INSTALL = 0,
+	USER_INSTALL = 1,
+}
+
+export enum CommandContext {
+	GUILD = 0,
+	BOT_DM = 1,
+	PRIVATE_CHANNEL = 2,
+}
+
 interface CommandInfoBasics {
 	name: string | Locales;
 	ownersOnly?: boolean;
-	dmPermission?: boolean;
 	nsfw?: boolean;
+	integration_types?: CommandIntegrationType[];
+	contexts?: CommandContext[];
 }
 
 interface CommandInfoMessage extends CommandInfoBasics {
@@ -63,6 +75,8 @@ export type CommandInfoExport = CommandInfo & {
 	description: string;
 	descriptionLocalizations: PartialLocales;
 	nsfw: boolean;
+	integration_types: CommandIntegrationType[];
+	contexts: CommandContext[];
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -77,8 +91,9 @@ interface SubCommandGroup<T> {
 export class Command<Inst = Meinu> {
 	name: Locales;
 	description: Locales;
-	dmPermission: boolean | null;
 	type: CommandInfo['type'];
+	integration_types: CommandIntegrationType[];
+	contexts: CommandContext[];
 	options: ApplicationCommandOptionData[] = [];
 	// eslint-disable-next-line no-use-before-define
 	subcommands: Command<Inst>[] = [];
@@ -93,7 +108,6 @@ export class Command<Inst = Meinu> {
 		this.ownersOnly = info.ownersOnly ?? false;
 		info.type = info.type ?? ApplicationCommandType.ChatInput;
 		this.type = info.type;
-		this.dmPermission = info.dmPermission ?? null;
 		if (info.type === ApplicationCommandType.ChatInput) {
 			this.description =
 				info.description instanceof Locales ? info.description : setLocales({ default: info.description });
@@ -101,6 +115,8 @@ export class Command<Inst = Meinu> {
 		} else {
 			this.description = setLocales({ default: '' });
 		}
+		this.integration_types = info.integration_types ?? [CommandIntegrationType.GUILD_INSTALL];
+		this.contexts = info.contexts ?? [CommandContext.GUILD];
 		this.permissionRes = () => Promise.resolve(true);
 		this.global = info.global ?? false;
 		this.nsfw = info.nsfw ?? false;
@@ -168,9 +184,10 @@ export class Command<Inst = Meinu> {
 		if (this.description.size > 1) res.descriptionLocalizations = this.description.toJSON();
 		if (this.name.size > 1) res.nameLocalizations = this.name.toJSON();
 		if (this.description && this.description.size > 1) res.descriptionLocalizations = this.description.toJSON();
-		if (this.dmPermission !== null) res.dmPermission = this.dmPermission;
 		if (res.type === ApplicationCommandType.ChatInput) if (this.options.length > 0) res.options = this.options;
 		if (this.nsfw) res.nsfw = true;
+		res.integration_types = this.integration_types;
+		res.contexts = this.contexts;
 		return res as CommandInfoExport;
 	}
 
