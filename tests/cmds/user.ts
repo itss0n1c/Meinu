@@ -1,4 +1,4 @@
-import { inspect } from 'util';
+import { inspect } from 'node:util';
 import { ApplicationCommandType, Command } from '../../lib/index.js';
 
 const user = new Command({

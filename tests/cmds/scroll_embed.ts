@@ -4,7 +4,6 @@ import {
 	ButtonBuilder,
 	ButtonStyle,
 	Command,
-	DataResolver,
 	EmbedBuilder,
 	create_scroll_embed,
 } from '../../lib/index.js';
@@ -29,8 +28,8 @@ export default new Command({
 		int,
 		data: gen_data,
 		match: async (val, index) => {
-			const res = await DataResolver.resolveFile('https://thispersondoesnotexist.com/');
-			const img = new AttachmentBuilder(res.data, {
+			const res = await fetch('https://thispersondoesnotexist.com/').then((r) => r.arrayBuffer());
+			const img = new AttachmentBuilder(Buffer.from(res), {
 				name: 'thispersondoesnotexist.jpg',
 			});
 			return {

@@ -1,4 +1,4 @@
-import { Awaitable } from 'discord.js';
+import type { Awaitable } from 'discord.js';
 import chalk from 'chalk';
 
 export const meinu_color = chalk.rgb(114, 137, 218);

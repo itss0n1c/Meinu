@@ -2,7 +2,7 @@
 	"name": "meinu",
 	"description": "A discord.js wrapper, with a focus on slash commands.",
 	"author": "S0n1c",
-	"version": "6.5.0",
+	"version": "6.6.0",
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -15,21 +15,20 @@
 		"lint": "biome check lib"
 	},
 	"devDependencies": {
-		"typescript": "^5.3.3",
-		"@biomejs/biome": "^1.5.2",
+		"typescript": "^5.5.2",
+		"@biomejs/biome": "^1.8.3",
 		"@types/bun": "latest",
-		"nodemon": "^3.1.0"
+		"nodemon": "^3.1.4"
 	},
 	"dependencies": {
 		"chalk": "^5.3.0",
-		"discord.js": "^14.14.1",
-		"dotenv": "^16.3.1"
+		"discord.js": "^14.15.3",
+		"dotenv": "^16.4.5"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+ssh://git@github.com/itss0n1c/meinu.git"
 	},
-	"packageManager": "yarn@4.0.2",
 	"bugs": {
 		"url": "https://github.com/itss0n1c/meinu/issues"
 	},

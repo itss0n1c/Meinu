@@ -1,4 +1,4 @@
-import { inspect } from 'util';
+import { inspect } from 'node:util';
 import { ActionRowBuilder, ApplicationCommandType, ButtonBuilder, ButtonStyle, Command } from '../../lib/index.js';
 
 export default new Command({

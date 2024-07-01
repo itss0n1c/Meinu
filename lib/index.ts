@@ -1,17 +1,17 @@
 import {
 	Client,
-	ClientOptions,
+	type ClientOptions,
 	Collection,
-	ColorResolvable,
+	type ColorResolvable,
 	GatewayIntentBits,
-	Snowflake,
+	type Snowflake,
 	Team,
 	User,
 	resolveColor,
 } from 'discord.js';
 import { config } from 'dotenv';
-import { Command, InteractionHandler, _meinu_log } from './utils/index.js';
-import chalk, { ChalkInstance } from 'chalk';
+import { type Command, InteractionHandler, _meinu_log } from './utils/index.js';
+import chalk, { type ChalkInstance } from 'chalk';
 import packageFile from '../package.json';
 import { register_cmds } from './utils/register.js';
 

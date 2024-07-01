@@ -1,22 +1,22 @@
 /* eslint-disable no-unused-vars */
 import {
-	AnySelectMenuInteraction,
-	ApplicationCommandOptionData,
+	type AnySelectMenuInteraction,
+	type ApplicationCommandOptionData,
 	ApplicationCommandOptionType,
-	ApplicationCommandSubCommandData,
+	type ApplicationCommandSubCommandData,
 	ApplicationCommandType,
-	AutocompleteInteraction,
-	ButtonInteraction,
-	ChatInputCommandInteraction,
-	Interaction,
-	InteractionResponse,
-	Message,
-	MessageContextMenuCommandInteraction,
-	ModalSubmitInteraction,
-	UserContextMenuCommandInteraction,
+	type AutocompleteInteraction,
+	type ButtonInteraction,
+	type ChatInputCommandInteraction,
+	type Interaction,
+	type InteractionResponse,
+	type Message,
+	type MessageContextMenuCommandInteraction,
+	type ModalSubmitInteraction,
+	type UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { Meinu } from '../index.js';
-import { Locales, PartialLocales, setLocales } from './Locales.js';
+import type { Meinu } from '../index.js';
+import { Locales, type PartialLocales, setLocales } from './Locales.js';
 
 type CommandResponse = void | Promise<InteractionResponse | void | Message>;
 

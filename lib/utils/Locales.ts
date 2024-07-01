@@ -1,4 +1,4 @@
-import { Locale as DiscordLocale } from 'discord.js';
+import type { Locale as DiscordLocale } from 'discord.js';
 
 type Locale = DiscordLocale | 'default';
 export type PartialLocales = Partial<Record<Locale, string>>;

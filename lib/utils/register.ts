@@ -1,13 +1,13 @@
 import {
 	type APIApplicationCommand as APIApplicationCommandOrig,
-	ApplicationCommand,
-	Collection,
-	Command,
-	Guild,
-	Meinu,
+	type ApplicationCommand,
+	type Collection,
+	type Command,
+	type Guild,
+	type Meinu,
 	_meinu_log,
 } from '../index.js';
-import { CommandContext, CommandInfoExport, CommandIntegrationType } from './Command.js';
+import type { CommandContext, CommandInfoExport, CommandIntegrationType } from './Command.js';
 
 async function _register_global_command<Inst extends Meinu>(bot: Inst, cmds: Collection<string, Command<Inst>>) {
 	if (!bot.application) return;

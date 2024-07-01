@@ -1,14 +1,14 @@
 import {
 	ApplicationCommandOptionType,
-	ApplicationCommandSubCommandData,
-	ApplicationCommandSubGroupData,
-	Interaction,
-	InteractionResponse,
+	type ApplicationCommandSubCommandData,
+	type ApplicationCommandSubGroupData,
+	type Interaction,
+	type InteractionResponse,
 	InteractionType,
-	Message,
+	type Message,
 } from 'discord.js';
-import { Meinu, _meinu_log, green, meinu_color, red } from '../index.js';
-import { Command, CommandInteractionHandlers } from './Command.js';
+import { type Meinu, _meinu_log, green, meinu_color, red } from '../index.js';
+import type { Command, CommandInteractionHandlers } from './Command.js';
 
 export class InteractionHandler {
 	inst: Meinu;

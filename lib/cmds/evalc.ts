@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import { inspect } from 'util';
+import { inspect } from 'node:util';
 import { Command } from '../utils/index.js';
 
 export default new Command({
@@ -10,10 +10,10 @@ export default new Command({
 			name: 'script',
 			description: 'the code',
 			type: ApplicationCommandOptionType.String,
-			required: true
-		}
+			required: true,
+		},
 	],
-	ownersOnly: true
+	ownersOnly: true,
 }).addHandler('chatInput', async (bot, int) => {
 	const script = int.options.getString('script', true);
 
@@ -26,6 +26,6 @@ export default new Command({
 	}
 
 	return int.reply({
-		content: `Output for \`${script}\`:\n\`\`\`js\n${inspect(run, { depth: 0 })}\`\`\``
+		content: `Output for \`${script}\`:\n\`\`\`js\n${inspect(run, { depth: 0 })}\`\`\``,
 	});
 });
