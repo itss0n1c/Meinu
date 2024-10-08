@@ -12,12 +12,14 @@ export default new Command({
 			autocomplete: true,
 		},
 	],
-}).addHandler('autocomplete', (bot, int) => {
-	const str = int.options.getString('query', true);
-	return int.respond(
-		[...str].map((c) => ({
-			name: c.toUpperCase(),
-			value: c,
-		})),
-	);
-});
+})
+	.addHandler('autocomplete', (bot, int) => {
+		const str = int.options.getString('query', true);
+		return int.respond(
+			[...str].map((c) => ({
+				name: `${c.toUpperCase()} - ${c}`,
+				value: c,
+			})),
+		);
+	})
+	.addHandler('chatInput', (bot, int) => int.reply(int.options.getString('query', true)));

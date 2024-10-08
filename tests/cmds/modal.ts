@@ -42,7 +42,7 @@ export default new Command({
 			})
 			.addHandler('chatInput', async (bot, int) => {
 				await int.deferReply();
-
+				if (!int.channel?.isSendable()) return int.editReply('This channel is not sendable.');
 				await int.channel?.send({
 					components: [
 						new ActionRowBuilder<ButtonBuilder>().addComponents(

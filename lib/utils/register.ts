@@ -7,7 +7,7 @@ import {
 	type Meinu,
 	_meinu_log,
 } from '../index.js';
-import type { CommandContext, CommandInfoExport, CommandIntegrationType } from './Command.js';
+import type { CommandInfoExport } from './Command.js';
 
 async function _register_global_command<Inst extends Meinu>(bot: Inst, cmds: Collection<string, Command<Inst>>) {
 	if (!bot.application) return;
@@ -23,20 +23,10 @@ async function _update_global_command<Inst extends Meinu>(bot: Inst, current: Ap
 	});
 }
 
-interface APIApplicationCommand extends APIApplicationCommandOrig {
-	integration_types?: CommandIntegrationType[];
-	contexts?: CommandContext[];
-}
-
-async function retrieve_global_cmds<Inst extends Meinu>(bot: Inst): Promise<APIApplicationCommand[]> {
-	if (!bot.application) throw new Error('Application is not defined');
-	return bot.rest.get(`/applications/${bot.application.id}/commands`) as Promise<APIApplicationCommand[]>;
-}
-
-function similar_cmd(cmd: ApplicationCommand, raw_cmd: APIApplicationCommand, local_cmd: CommandInfoExport) {
+function similar_cmd(cmd: ApplicationCommand, raw_cmd: ApplicationCommand, local_cmd: CommandInfoExport) {
 	const orig = cmd.equals(local_cmd);
 	const compareArrs = <T>(a: T[], b: T[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-	const integration_types = raw_cmd.integration_types ?? [];
+	const integration_types = raw_cmd.integrationTypes ?? [];
 	const contexts = raw_cmd.contexts ?? [];
 
 	const local_integration_types = local_cmd.integration_types ?? [];
@@ -51,7 +41,7 @@ async function register_global<Inst extends Meinu>(bot: Inst, cmds: Collection<s
 	await cmds_manager.fetch({
 		withLocalizations: true,
 	});
-	const global_cmds = await retrieve_global_cmds(bot);
+	const global_cmds = await bot.application.commands.fetch();
 
 	await _meinu_log({ title: 'cmd_info' }, 'Checking global commands');
 
@@ -93,33 +83,60 @@ async function register_guild<Inst extends Meinu>(bot: Inst, guild: Guild, cmds:
 		withLocalizations: true,
 	});
 
-	await _meinu_log({ title: 'cmd_info' }, `Checking guild commands for guild ${guild.name} [WIP]`);
+	await _meinu_log({ title: 'cmd_info' }, `Checking guild commands for guild ${bot.bot_chalk(guild.name)}`);
 
 	for (const cmd of cmds_manager.cache.values()) {
 		const local_cmd = cmds.get(cmd.name);
 		if (local_cmd) continue;
 		await _meinu_log(
 			{ cb: cmd.delete(), title: 'cmd_delete' },
-			`Removing global command ${bot.bot_chalk(cmd.name)} for guild ${guild.name}`,
+			`Removing guild command ${bot.bot_chalk(cmd.name)} for ${bot.bot_chalk(guild.name)}`,
 		);
 	}
+
+	const adding: Array<Command<Inst>> = [];
+	const updating: Array<[Command<Inst>, ApplicationCommand]> = [];
 
 	for (const cmd of cmds.values()) {
 		const local_cmd = cmd.commandInfo();
 		const find = cmds_manager.cache.find((c) => c.name === cmd.name.default);
-		if (!find) {
+		if (!find) adding.push(cmd);
+		else {
+			const should_update = !find.equals(local_cmd);
+			if (should_update) updating.push([cmd, find]);
+		}
+	}
+
+	if (adding.length) {
+		await _meinu_log(
+			{
+				title: 'cmd_info',
+			},
+			`Adding ${bot.bot_chalk(adding.length)} guild commands for guild ${bot.bot_chalk(guild.name)}`,
+		);
+
+		for await (const cmd of adding) {
 			await _meinu_log(
 				{ cb: cmds_manager.create(cmd.commandInfo()), title: 'cmd_create' },
-				`Registering global command ${bot.bot_chalk(cmd.name.default)} for guild ${guild.name}`,
+				`Registering guild command ${bot.bot_chalk(cmd.name.default)} for ${bot.bot_chalk(guild.name)}`,
 			);
-		} else {
-			const should_update = !find.equals(local_cmd);
+		}
+	}
+
+	if (updating.length) {
+		await _meinu_log(
+			{
+				title: 'cmd_info',
+			},
+			`Updating ${bot.bot_chalk(updating.length)} guild commands for guild ${bot.bot_chalk(guild.name)}`,
+		);
+
+		for await (const [cmd, find] of updating) {
+			const local_cmd = cmd.commandInfo();
 			await _meinu_log(
-				{ cb: void 0, title: 'cmd_status' },
-				`${bot.bot_chalk(cmd.name.default)} needs update →`,
-				should_update,
+				{ cb: find.edit(local_cmd), title: 'cmd_update' },
+				`Updating guild command ${bot.bot_chalk(cmd.name.default)} for ${bot.bot_chalk(guild.name)}`,
 			);
-			if (should_update) await _update_global_command(bot, find, cmd);
 		}
 	}
 }
