@@ -9,7 +9,6 @@ import {
 	User,
 	resolveColor,
 } from 'discord.js';
-import { config } from 'dotenv';
 import { type Command, InteractionHandler, _meinu_log } from './utils/index.js';
 import chalk, { type ChalkInstance } from 'chalk';
 import packageFile from '../package.json';
@@ -71,11 +70,10 @@ class Meinu extends Client {
 
 	async init(_token?: string): Promise<this> {
 		_meinu_log({ title: 'init' }, `Initializing ${this.bot_chalk(this.name)}`);
-		config();
-		if (typeof process.env.TOKEN === 'undefined' && typeof _token === 'undefined') {
+		if (typeof Bun.env.TOKEN === 'undefined' && typeof _token === 'undefined') {
 			throw new Error('Token is not defined');
 		}
-		await super.login(_token ?? process.env.TOKEN);
+		await super.login(_token ?? Bun.env.TOKEN);
 
 		if (!this.user) {
 			throw new Error('Client user is not defined');

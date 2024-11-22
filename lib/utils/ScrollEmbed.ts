@@ -44,20 +44,43 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	embed_data: Data;
 	int: RepliableInteraction;
 	index = 0;
+
+	reloading = false;
+
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = { ...data };
 		this.int = data.int;
 		this.embed_data = res;
 	}
 
-	async reload_data({ data, bint }: { data?: ScrollDataFn<Data>; bint?: ButtonInteraction } = {}): Promise<void> {
-		if (data) this.data.data = data;
+	current_embed_cache?: MatchedEmbed;
+
+	private async get_embed() {
+		if (this.current_embed_cache) return this.current_embed_cache;
+		const current_data = this.embed_data[this.index];
+		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		this.current_embed_cache = current_embed;
+		return current_embed;
+	}
+
+	private async update_reloading(val: boolean) {
+		const embed = await this.get_embed();
+		this.reloading = val;
+		this.int.editReply({ components: this.render_components(embed.components) });
+	}
+
+	async reload_data(bint: ButtonInteraction): Promise<void> {
+		if (bint) {
+			await this.update_reloading(true);
+			await bint.deferUpdate();
+		}
+
+		this.current_embed_cache = undefined;
 
 		this.embed_data = await this.data.data();
 		this.index = 0;
 
-		const current_data = this.embed_data[this.index];
-		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		const current_embed = await this.get_embed();
 
 		const components = this.render_components(current_embed.components);
 
@@ -72,7 +95,8 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				...current_embed_data,
 			}),
 		);
-		if (bint) await bint.deferUpdate();
+
+		if (bint) this.update_reloading(false);
 	}
 
 	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<ScrollEmbed<Data>> {
@@ -101,7 +125,11 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				.setLabel('→')
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(!can_go_forward),
-			new ButtonBuilder().setCustomId('scroll_embed_reload').setLabel('↻').setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder()
+				.setCustomId('scroll_embed_reload')
+				.setLabel('↻')
+				.setStyle(ButtonStyle.Secondary)
+				.setDisabled(this.reloading),
 		];
 
 		const chunks = [];
@@ -121,8 +149,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 		let scroll_embed: Message | InteractionResponse;
 
-		const current_data = this.embed_data[this.index];
-		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		const current_embed = await this.get_embed();
 		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
@@ -162,7 +189,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 						await this.scroll_embed_move('next', bint);
 						break;
 					case 'scroll_embed_reload':
-						await this.reload_data({ bint });
+						await this.reload_data(bint);
 						break;
 				}
 			}
@@ -181,8 +208,8 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				break;
 		}
 
-		const current_data = this.embed_data[this.index];
-		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		this.current_embed_cache = undefined;
+		const current_embed = await this.get_embed();
 		const components = this.render_components(current_embed.components);
 
 		const current_embed_data = {
@@ -200,6 +227,4 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	}
 }
 
-export async function create_scroll_embed<Data extends ScrollDataType>(data: ScrollEmbedData<Data>) {
-	return ScrollEmbed.init(data);
-}
+export const create_scroll_embed = <Data extends ScrollDataType>(data: ScrollEmbedData<Data>) => ScrollEmbed.init(data);
