@@ -28,10 +28,12 @@ export interface MatchedEmbed {
 
 type AnySelectMenuBuilder = StringSelectMenuBuilder | RoleSelectMenuBuilder | UserSelectMenuBuilder;
 
+type ScrollEmbedControllable = 'initiator' | 'all';
+
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: RepliableInteraction;
 	data: ScrollDataFn<Data>;
-	// eslint-disable-next-line no-unused-vars
+	controllable?: ScrollEmbedControllable;
 	match: (val: Data[number], index: number, array: Data[number][]) => Awaitable<MatchedEmbed>;
 }
 
@@ -48,7 +50,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	reloading = false;
 
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
-		this.data = { ...data };
+		this.data = { ...data, controllable: data.controllable ?? 'initiator' };
 		this.int = data.int;
 		this.embed_data = res;
 	}
@@ -180,6 +182,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 			i.customId === 'scroll_embed_reload';
 		const collector = scroll_embed.createMessageComponentCollector({ filter });
 		collector.on('collect', async (bint) => {
+			if (this.data.controllable === 'initiator' && bint.user.id !== int.user.id) return bint.deferUpdate();
 			if (bint.isButton()) {
 				switch (bint.customId) {
 					case 'scroll_embed_prev':

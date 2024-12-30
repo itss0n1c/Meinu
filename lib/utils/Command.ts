@@ -110,13 +110,19 @@ export class Command<Inst = Meinu> {
 		this.nsfw = info.nsfw ?? false;
 	}
 
+	private num_sort = (a: number, b: number) => a - b;
+
 	get global(): boolean {
-		return (
-			this.integration_types.includes(ApplicationIntegrationType.GuildInstall) &&
-			[InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel].every(
-				(c) => this.contexts.includes(c),
-			)
-		);
+		const integrations_global = [
+			ApplicationIntegrationType.GuildInstall,
+			ApplicationIntegrationType.UserInstall,
+		].some((i) => this.integration_types.includes(i));
+		const contexts_global = [
+			InteractionContextType.Guild,
+			InteractionContextType.BotDM,
+			InteractionContextType.PrivateChannel,
+		].every((c) => this.contexts.includes(c));
+		return integrations_global && contexts_global;
 	}
 
 	addSubCommandGroup(group: SubCommandGroup<Command<Inst>>): this {
@@ -184,8 +190,9 @@ export class Command<Inst = Meinu> {
 		if (res.type === ApplicationCommandType.ChatInput) if (this.options.length > 0) res.options = this.options;
 		if (this.nsfw) res.nsfw = true;
 
-		res.integration_types = this.integration_types.length > 0 ? this.integration_types : undefined;
-		res.contexts = (this.contexts.length > 0 ? this.contexts : null) as typeof res.contexts;
+		res.integration_types =
+			this.integration_types.length > 0 ? this.integration_types.sort(this.num_sort) : undefined;
+		res.contexts = (this.contexts.length > 0 ? this.contexts.sort(this.num_sort) : null) as typeof res.contexts;
 		return res as CommandInfoExport;
 	}
 

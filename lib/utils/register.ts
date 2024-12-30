@@ -16,18 +16,18 @@ async function _register_global_command<Inst extends Meinu>(bot: Inst, cmds: Col
 	});
 }
 
-async function _update_global_command<Inst extends Meinu>(bot: Inst, current: ApplicationCommand, cmds: Command<Inst>) {
+async function _update_global_command<Inst extends Meinu>(bot: Inst, current: ApplicationCommand, cmd: Command<Inst>) {
 	if (!bot.application) return;
 	return bot.rest.patch(`/applications/${bot.application.id}/commands/${current.id}`, {
-		body: cmds.commandInfo(),
+		body: cmd.commandInfo(),
 	});
 }
 
-function similar_cmd(cmd: ApplicationCommand, raw_cmd: ApplicationCommand, local_cmd: CommandInfoExport) {
+function similar_cmd(cmd: ApplicationCommand, local_cmd: CommandInfoExport) {
 	const orig = cmd.equals(local_cmd);
-	const compareArrs = <T>(a: T[], b: T[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-	const integration_types = raw_cmd.integrationTypes ?? [];
-	const contexts = raw_cmd.contexts ?? [];
+	const compareArrs = <T>(a: T[], b: T[]) => a.length === b.length && a.every((v) => b.includes(v));
+	const integration_types = cmd.integrationTypes ?? [];
+	const contexts = cmd.contexts ?? [];
 
 	const local_integration_types = local_cmd.integration_types ?? [];
 	const local_contexts = local_cmd.contexts ?? [];
@@ -41,7 +41,6 @@ async function register_global<Inst extends Meinu>(bot: Inst, cmds: Collection<s
 	await cmds_manager.fetch({
 		withLocalizations: true,
 	});
-	const global_cmds = await bot.application.commands.fetch();
 
 	await _meinu_log({ title: 'cmd_info' }, 'Checking global commands');
 
@@ -57,14 +56,13 @@ async function register_global<Inst extends Meinu>(bot: Inst, cmds: Collection<s
 	for (const cmd of cmds.values()) {
 		const local_cmd = cmd.commandInfo();
 		const find = cmds_manager.cache.find((c) => c.name === cmd.name.default);
-		const findRaw = global_cmds.find((c) => c.name === cmd.name.default);
-		if (!find || !findRaw) {
+		if (!find) {
 			await _meinu_log(
 				{ cb: _register_global_command(bot, cmds), title: 'cmd_create' },
 				`Registering global command ${bot.bot_chalk(cmd.name.default)}`,
 			);
 		} else {
-			const should_update = !similar_cmd(find, findRaw, local_cmd);
+			const should_update = !similar_cmd(find, local_cmd);
 			await _meinu_log(
 				{ cb: void 0, title: 'cmd_status' },
 				`${bot.bot_chalk(cmd.name.default)} needs update →`,
