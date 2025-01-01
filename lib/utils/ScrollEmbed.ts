@@ -43,9 +43,13 @@ interface ScrollEmbedData<Data extends ScrollDataType> {
 	match: (val: Data[number], index: number, array: Data[number][]) => Awaitable<MatchedEmbed>;
 }
 
-// eslint-disable-next-line no-unused-vars
-const try_prom = <T>(prom: Awaitable<T>) =>
-	prom instanceof Promise ? ((prom as Promise<T>).catch((e) => console.error(e)) as Promise<T>) : (prom as T);
+async function try_prom<T>(prom: Awaitable<T>): Promise<T | undefined> {
+	try {
+		return await prom;
+	} catch (e) {
+		console.error(e);
+	}
+}
 
 export class ScrollEmbed<Data extends ScrollDataType> {
 	readonly data: Required<ScrollEmbedData<Data>>;
@@ -73,6 +77,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const current_data = this.embed_data.at(this.index);
 		if (!current_data) return this.data.fail_msg;
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
+		if (!current_embed) return this.data.fail_msg;
 		this.current_embed_cache = current_embed;
 		return current_embed;
 	}
@@ -180,7 +185,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const { int } = this.data;
 		if (!int.isRepliable()) throw new Error('Interaction is not repliable.');
 
-		let scroll_embed: Message | InteractionResponse;
+		let scroll_embed: Message | InteractionResponse | undefined;
 
 		const current_embed = await this.get_embed();
 		const components = this.render_components(current_embed.components);
