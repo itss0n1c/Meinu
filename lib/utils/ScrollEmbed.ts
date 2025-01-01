@@ -126,10 +126,12 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		if (bint) this.update_reloading(false);
 	}
 
-	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<ScrollEmbed<Data>> {
-		const res = await data.data();
-		const inst = new ScrollEmbed(data, res);
-		return inst.init();
+	static async init<Data extends ScrollDataType>(data: ScrollEmbedData<Data>): Promise<void> {
+		const res = await try_prom(data.data());
+		if (res) return new ScrollEmbed(data, res).init();
+		if (data.int.replied || data.int.deferred)
+			data.int.editReply(data.fail_msg ?? { content: 'Failed to get data.' });
+		else data.int.reply(data.fail_msg ?? { content: 'Failed to get data.' });
 	}
 
 	private render_components(
@@ -181,7 +183,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		return rows;
 	}
 
-	private async init(): Promise<this> {
+	private async init() {
 		const { int } = this.data;
 		if (!int.isRepliable()) throw new Error('Interaction is not repliable.');
 
@@ -229,8 +231,6 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				}
 			}
 		});
-
-		return this;
 	}
 
 	private async scroll_embed_move(action: 'prev' | 'next', bint?: ButtonInteraction) {

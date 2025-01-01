@@ -1,3 +1,4 @@
+import { StringLike } from 'bun';
 import {
 	ActionRowBuilder,
 	AttachmentBuilder,
@@ -23,14 +24,16 @@ export default new Command({
 	});
 
 	// const gen_data = () => Array.from({ length: 10 }, (_, i) => make_data(i));
-	const gen_data = () => [];
+	const gen_data = async (): Promise<Array<Record<string, any>>> => {
+		throw new Error('No data found.');
+	};
 
 	await create_scroll_embed({
 		int,
 		data: gen_data,
 		show_page_count: true,
 		fail_msg: {
-			content: 'No data found.',
+			content: 'No data found. Please try again later.',
 		},
 		match: async (val, index) => {
 			const res = await fetch('https://thispersondoesnotexist.com/').then((r) => r.arrayBuffer());
