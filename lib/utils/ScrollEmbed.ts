@@ -7,9 +7,12 @@ import {
 	type ButtonInteraction,
 	ButtonStyle,
 	type EmbedBuilder,
+	type InteractionEditReplyOptions,
+	type InteractionReplyOptions,
 	type InteractionResponse,
 	type Message,
 	type MessageComponentInteraction,
+	MessagePayload,
 	type RepliableInteraction,
 	type RoleSelectMenuBuilder,
 	type StringSelectMenuBuilder,
@@ -21,6 +24,7 @@ type ScrollDataType = Array<Record<string, any>>;
 type ScrollDataFn<Data extends ScrollDataType> = () => Awaitable<Data>;
 
 export interface MatchedEmbed {
+	content?: string;
 	embed: EmbedBuilder | APIEmbed;
 	files?: AttachmentBuilder[];
 	components?: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>>;
@@ -71,6 +75,17 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		this.int.editReply({ components: this.render_components(embed.components) });
 	}
 
+	private current_data_to_payload<Editing extends boolean>(
+		data: MatchedEmbed,
+		_editing?: Editing,
+	): Editing extends true ? InteractionEditReplyOptions : InteractionReplyOptions {
+		return {
+			...(data.content ? { content: data.content } : {}),
+			embeds: [data.embed],
+			files: data.files,
+		};
+	}
+
 	async reload_data(bint: ButtonInteraction): Promise<void> {
 		if (bint) {
 			await this.update_reloading(true);
@@ -86,15 +101,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 		const components = this.render_components(current_embed.components);
 
-		const current_embed_data = {
-			embeds: [current_embed.embed],
-			files: current_embed.files,
-		};
-
 		await try_prom(
 			this.int.editReply({
 				components,
-				...current_embed_data,
+				...this.current_data_to_payload(current_embed),
 			}),
 		);
 
@@ -154,22 +164,18 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const current_embed = await this.get_embed();
 		const components = this.render_components(current_embed.components);
 
-		const current_embed_data = {
-			embeds: [current_embed.embed],
-			files: current_embed.files,
-		};
 		if (int.deferred || int.replied) {
 			scroll_embed = await try_prom(
 				this.int.editReply({
 					components,
-					...current_embed_data,
+					...this.current_data_to_payload(current_embed),
 				}),
 			);
 		} else {
 			scroll_embed = await try_prom(
 				this.int.reply({
 					components,
-					...current_embed_data,
+					...this.current_data_to_payload(current_embed, false),
 				}),
 			);
 		}
@@ -215,14 +221,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		const current_embed = await this.get_embed();
 		const components = this.render_components(current_embed.components);
 
-		const current_embed_data = {
-			embeds: [current_embed.embed],
-			files: current_embed.files,
-		};
 		await try_prom(
 			this.int.editReply({
 				components,
-				...current_embed_data,
+				...this.current_data_to_payload(current_embed),
 			}),
 		);
 
