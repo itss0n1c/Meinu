@@ -37,6 +37,7 @@ type ScrollEmbedControllable = 'initiator' | 'all';
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: RepliableInteraction;
 	show_page_count?: boolean;
+	fail_msg?: MatchedEmbed;
 	data: ScrollDataFn<Data>;
 	controllable?: ScrollEmbedControllable;
 	match: (val: Data[number], index: number, array: Data[number][]) => Awaitable<MatchedEmbed>;
@@ -57,6 +58,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
 		this.data = {
 			...data,
+			fail_msg: data.fail_msg ?? { content: 'Failed to get data.' },
 			show_page_count: data.show_page_count ?? false,
 			controllable: data.controllable ?? 'initiator',
 		};
@@ -68,7 +70,8 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 
 	private async get_embed() {
 		if (this.current_embed_cache) return this.current_embed_cache;
-		const current_data = this.embed_data[this.index];
+		const current_data = this.embed_data.at(this.index);
+		if (!current_data) return this.data.fail_msg;
 		const current_embed = await try_prom(this.data.match(current_data, this.index, this.embed_data));
 		this.current_embed_cache = current_embed;
 		return current_embed;
@@ -128,8 +131,10 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		extra_rows?: MatchedEmbed['components'],
 	): Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>> {
 		const rows: ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>[] = [];
-		const can_go_back = this.index !== 0;
-		const can_go_forward = this.embed_data.length > this.index + 1;
+		const has_data = !!this.embed_data.length;
+		const can_go_back = !this.reloading && has_data && this.index !== 0;
+		const can_go_forward = !this.reloading && has_data && this.embed_data.length > this.index + 1;
+		const can_reload = !this.reloading;
 
 		if (extra_rows) rows.push(...extra_rows);
 
@@ -148,8 +153,8 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				.setCustomId('scroll_embed_reload')
 				.setLabel('↻')
 				.setStyle(ButtonStyle.Secondary)
-				.setDisabled(this.reloading),
-			...(this.data.show_page_count
+				.setDisabled(!can_reload),
+			...(this.data.show_page_count && has_data
 				? [
 						new ButtonBuilder()
 							.setCustomId('scroll_embed_page_count')

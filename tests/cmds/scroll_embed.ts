@@ -22,12 +22,16 @@ export default new Command({
 		date: new Date(2021, Math.floor(Math.random() * 12), Math.floor(Math.random() * 31)),
 	});
 
-	const gen_data = () => Array.from({ length: 10 }, (_, i) => make_data(i));
+	// const gen_data = () => Array.from({ length: 10 }, (_, i) => make_data(i));
+	const gen_data = () => [];
 
 	await create_scroll_embed({
 		int,
 		data: gen_data,
 		show_page_count: true,
+		fail_msg: {
+			content: 'No data found.',
+		},
 		match: async (val, index) => {
 			const res = await fetch('https://thispersondoesnotexist.com/').then((r) => r.arrayBuffer());
 			const img = new AttachmentBuilder(Buffer.from(res), {
