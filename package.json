@@ -2,7 +2,7 @@
 	"name": "meinu",
 	"description": "A discord.js wrapper, with a focus on slash commands.",
 	"author": "S0n1c",
-	"version": "6.11.0",
+	"version": "6.11.1",
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",

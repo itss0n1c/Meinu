@@ -12,7 +12,7 @@ export default new Command({
 	name: 'scroll_embed',
 	description: 'Scroll Embed',
 }).addHandler('chatInput', async (bot, int) => {
-	await int.deferReply();
+	await int.reply('loading...');
 
 	const make_data = (index: number) => ({
 		title: `Page ${index + 1}`,
@@ -33,6 +33,7 @@ export default new Command({
 				name: 'thispersondoesnotexist.jpg',
 			});
 			return {
+				content: '',
 				embed: new EmbedBuilder()
 					.setTitle(val.title)
 					.setDescription(val.description.replace('{page}', `${index + 1}`))

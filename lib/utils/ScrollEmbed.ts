@@ -80,7 +80,7 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		_editing?: Editing,
 	): Editing extends true ? InteractionEditReplyOptions : InteractionReplyOptions {
 		return {
-			...(data.content ? { content: data.content } : {}),
+			...(data.content !== undefined ? { content: data.content } : {}),
 			embeds: [data.embed],
 			files: data.files,
 		};
