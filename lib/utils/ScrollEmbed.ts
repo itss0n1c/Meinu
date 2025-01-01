@@ -25,7 +25,7 @@ type ScrollDataFn<Data extends ScrollDataType> = () => Awaitable<Data>;
 
 export interface MatchedEmbed {
 	content?: string;
-	embed: EmbedBuilder | APIEmbed;
+	embed?: EmbedBuilder | APIEmbed;
 	files?: AttachmentBuilder[];
 	components?: Array<ActionRowBuilder<ButtonBuilder | AnySelectMenuBuilder>>;
 }
@@ -36,6 +36,7 @@ type ScrollEmbedControllable = 'initiator' | 'all';
 
 interface ScrollEmbedData<Data extends ScrollDataType> {
 	int: RepliableInteraction;
+	show_page_count?: boolean;
 	data: ScrollDataFn<Data>;
 	controllable?: ScrollEmbedControllable;
 	match: (val: Data[number], index: number, array: Data[number][]) => Awaitable<MatchedEmbed>;
@@ -54,7 +55,11 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 	reloading = false;
 
 	constructor(data: ScrollEmbedData<Data>, res: Data) {
-		this.data = { ...data, controllable: data.controllable ?? 'initiator' };
+		this.data = {
+			...data,
+			show_page_count: data.show_page_count ?? false,
+			controllable: data.controllable ?? 'initiator',
+		};
 		this.int = data.int;
 		this.embed_data = res;
 	}
@@ -79,9 +84,11 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 		data: MatchedEmbed,
 		_editing?: Editing,
 	): Editing extends true ? InteractionEditReplyOptions : InteractionReplyOptions {
+		if (data.content === undefined && data.embed === undefined && data.files === undefined)
+			throw new Error('No content, embed or files provided.');
 		return {
 			...(data.content !== undefined ? { content: data.content } : {}),
-			embeds: [data.embed],
+			...(data.embed ? { embeds: [data.embed] } : {}),
 			files: data.files,
 		};
 	}
@@ -142,6 +149,15 @@ export class ScrollEmbed<Data extends ScrollDataType> {
 				.setLabel('↻')
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(this.reloading),
+			...(this.data.show_page_count
+				? [
+						new ButtonBuilder()
+							.setCustomId('scroll_embed_page_count')
+							.setLabel(`${this.index + 1} / ${this.embed_data.length}`)
+							.setStyle(ButtonStyle.Secondary)
+							.setDisabled(true),
+					]
+				: []),
 		];
 
 		const chunks = [];
