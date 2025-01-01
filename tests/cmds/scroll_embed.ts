@@ -27,21 +27,18 @@ export default new Command({
 	await create_scroll_embed({
 		int,
 		data: gen_data,
+		show_page_count: true,
 		match: async (val, index) => {
 			const res = await fetch('https://thispersondoesnotexist.com/').then((r) => r.arrayBuffer());
 			const img = new AttachmentBuilder(Buffer.from(res), {
 				name: 'thispersondoesnotexist.jpg',
 			});
 			return {
-				content: '',
-				embed: new EmbedBuilder()
-					.setTitle(val.title)
-					.setDescription(val.description.replace('{page}', `${index + 1}`))
-					.setAuthor({
-						name: val.author,
-					})
-					.setImage(`attachment://${img.name}`)
-					.setTimestamp(val.date),
+				content: [
+					`This is page ${index + 1}`,
+					`Author: ${val.author}`,
+					`Date: ${val.date.toDateString()}`,
+				].join('\n'),
 				files: [img],
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().addComponents(
